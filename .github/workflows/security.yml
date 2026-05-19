@@ -1,0 +1,22 @@
+name: Security Scan (OWASP ZAP)
+
+on:
+  schedule:
+    # Roda automaticamente toda segunda-feira às 02:00
+    - cron: '0 2 * * 1'
+  workflow_dispatch: # Permite rodar manualmente pelo GitHub
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    name: Scan the web application
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: ZAP Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'https://seu-dominio.com' # Atualizar com o domínio real de produção/staging
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/pwa-192x192.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#020817" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Primordial SEO & Meta Tags -->
+    <meta name="description" content="Axion Technology. Plataforma Enterprise de Gestão de Ocorrências Industriais." />
+    <meta name="keywords" content="industrial, operations, platform, axion, agv, maintenance, tickets, sla" />
+    <meta name="author" content="Axion Technology" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://axion.enterprise/" />
+    <meta property="og:title" content="Axion Technology" />
+    <meta property="og:description" content="Gestão crítica de ocorrências industriais e controle de AGVs em tempo real." />
+    <meta property="og:image" content="/pwa-512x512.svg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Axion Technology" />
+    <meta property="twitter:description" content="Gestão crítica de ocorrências industriais e controle de AGVs em tempo real." />
+    <meta property="twitter:image" content="/pwa-512x512.svg" />
+
+    <title>Axion Technology</title>
+    
+    <style>
+      /* Pre-loader logic for premium AXION feel */
+      #preloader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #0A0A0A;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0.4s;
+      }
+      
+      .loader-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      
+      .logo-red-dot {
+        width: 6px;
+        height: 24px;
+        background-color: #DC2626;
+        display: inline-block;
+        animation: pulse-dot 1.5s infinite ease-in-out;
+      }
+      
+      .logo-text-large {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 36px;
+        font-weight: 900;
+        color: #FFFFFF;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      
+      .loader-bar-container {
+        width: 180px;
+        height: 3px;
+        background: rgba(220, 38, 38, 0.1);
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      .loader-bar {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, #DC2626, #EF4444, transparent);
+        animation: progress-slide 1.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .loader-subtext {
+        color: #71717A;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+        margin-top: 16px;
+        opacity: 0.8;
+      }
+      
+      @keyframes progress-slide {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+      
+      @keyframes pulse-dot {
+        0%, 100% { transform: scaleY(1); opacity: 0.6; }
+        50% { transform: scaleY(1.4); opacity: 1; }
+      }
+      
+      body.loaded #preloader {
+        opacity: 0;
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="preloader">
+      <div class="loader-logo">
+        <span class="logo-red-dot"></span>
+        <span class="logo-text-large">AXION</span>
+      </div>
+      <div class="loader-bar-container">
+        <div class="loader-bar"></div>
+      </div>
+      <div class="loader-subtext">Industrial Operations</div>
+    </div>
+
+    <div id="root"></div>
+    
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <script>
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.body.classList.add('loaded');
+        }, 300);
+      });
+    </script>
+  </body>
+</html>

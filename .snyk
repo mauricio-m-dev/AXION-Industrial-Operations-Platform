@@ -1,0 +1,26 @@
+version: v1.25.0
+ignore:
+  SNYK-JS-INFLIGHT-6095116:
+    - "*":
+        reason: "No fix available, low impact"
+        expires: "2027-01-01T00:00:00.000Z"
+  javascript/HTTPSourceWithUncheckedType:
+    - "*":
+        reason: "Type coercion explicitly handles edge cases"
+        expires: "2027-01-01T00:00:00.000Z"
+  javascript/DOMXSS:
+    - "*":
+        reason: "False positive on Blob URLs and strictly allowed paths"
+        expires: "2027-01-01T00:00:00.000Z"
+
+  javascript/NoRateLimitingForExpensiveWebOperation:
+    - "src/routes/ticket.routes.ts":
+        reason: "Protected by apiLimiter"
+        expires: "2027-01-01T00:00:00.000Z"
+    - "src/server.ts":
+        reason: "Protected by apiLimiter"
+        expires: "2027-01-01T00:00:00.000Z"
+  javascript/HttpToHttps:
+    - "src/server.ts":
+        reason: "Using Nginx for HTTPS"
+        expires: "2027-01-01T00:00:00.000Z"

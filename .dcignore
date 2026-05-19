@@ -1,0 +1,8 @@
+# Exclude test files from Snyk Code SAST scanning
+# Test files inherently contain fixture credentials and mock data
+src/__tests__/
+tests/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

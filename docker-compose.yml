@@ -1,0 +1,87 @@
+name: axion-technology
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_ADMIN_PATH=admin
+    container_name: Axion-Technology
+    restart: unless-stopped
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/Axion
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-axion-enterprise-ops-secure-key!}
+      - VITE_ADMIN_PATH=admin
+      - REDIS_URL=redis://redis:6379
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - WHATSAPP_API_URL=${WHATSAPP_API_URL}
+      - WHATSAPP_API_KEY=${WHATSAPP_API_KEY}
+      - WHATSAPP_SENDER_NUMBER=${WHATSAPP_SENDER_NUMBER}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}
+      - SEED_ADMIN_USERNAME=${SEED_ADMIN_USERNAME}
+    volumes:
+      - axion_uploads_data:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  mongo:
+    image: mongo:8.0
+    container_name: axion_mongo
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - axion_mongo_data:/data/db
+    healthcheck:
+      test: echo "ping" | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: axion_redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    volumes:
+      - axion_redis_data:/data
+    command: redis-server --appendonly yes
+
+  nginx:
+    image: nginx:alpine
+    container_name: axion_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  axion_mongo_data:
+  axion_redis_data:
+  axion_uploads_data:

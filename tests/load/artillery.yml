@@ -1,0 +1,72 @@
+config:
+  target: "http://localhost:3000"
+  environments:
+    production:
+      target: "https://seu-dominio.com"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 20
+      name: "Ramp up load"
+    - duration: 60
+      arrivalRate: 20
+      name: "Sustained high load"
+  processor: ""
+  payload:
+    # Opcional: injetar usuários a partir de um CSV
+    # path: "users.csv"
+    # fields:
+    #   - "matricula"
+    #   - "password"
+    # skipHeader: true
+    
+scenarios:
+  - name: "Health check, login, and fetch tickets (Troca de turno)"
+    flow:
+      - get:
+          url: "/api/health"
+          capture:
+            - json: "$.status"
+              as: "healthStatus"
+      - think: 1
+
+      - post:
+          url: "/api/auth/login"
+          json:
+            matricula: "12345" # Deve existir no banco de dados de teste ou mock
+            password: "Password@123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - think: 1
+
+      - get:
+          url: "/api/tickets"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+      - think: 2
+
+      - post:
+          url: "/api/tickets"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            X-Requested-With: "XMLHttpRequest"
+          json:
+            type: "Manutenção"
+            location: "ASSEMBLY-01"
+            impact: "parcial"
+            description: "Teste de estresse"
+            operator_name: "Operador de Carga"
+          capture:
+            - json: "$.ticketId"
+              as: "newTicketId"
+      - think: 2
+
+      - get:
+          url: "/api/tickets/stats"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200

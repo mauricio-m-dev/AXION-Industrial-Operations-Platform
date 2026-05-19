@@ -1,0 +1,89 @@
+openapi: 3.0.0
+info:
+  title: AXION Enterprise API
+  description: API REST para a plataforma de gestão de operações industriais AXION.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+    description: Servidor de Desenvolvimento Local
+  - url: https://api.axion.com/api
+    description: Servidor de Produção
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      summary: Autenticação de Usuário
+      description: Retorna access token e refresh token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  example: admin123
+      responses:
+        '200':
+          description: Sucesso
+        '401':
+          description: Credenciais inválidas ou conta bloqueada
+  /tickets:
+    get:
+      summary: Listar Chamados
+      description: Retorna todos os chamados ou chamados paginados.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Número da página (opcional)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Limite de itens por página (opcional)
+      responses:
+        '200':
+          description: Sucesso
+    post:
+      summary: Criar Chamado
+      description: Registra uma nova ocorrência (multipart/form-data suportado para imagens).
+      security: []
+      responses:
+        '201':
+          description: Criado com sucesso
+  /tickets/{id}/status:
+    patch:
+      summary: Atualizar Status do Chamado
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [Aberto, Em atendimento, Finalizado]
+      responses:
+        '200':
+          description: Atualizado

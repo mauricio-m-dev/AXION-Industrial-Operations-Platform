@@ -246,6 +246,10 @@ export default function OperatorPage() {
             <span className="text-xl font-black tracking-widest text-[#DC2626] dark:text-red-500">
               AXION
             </span>
+            <span className="hidden min-[350px]:inline-flex ml-1 text-[9px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-none border border-zinc-200/50 dark:border-zinc-700/50">
+              <span className="hidden sm:inline">{t("app.free_license")}</span>
+              <span className="inline sm:hidden">{t("app.free_license_short")}</span>
+            </span>
             <div className="hidden sm:block w-[1px] h-3 bg-zinc-200 dark:bg-zinc-700 mx-3" />
             <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">{t("header.support")}</span>
           </div>

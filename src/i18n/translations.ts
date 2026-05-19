@@ -4,6 +4,8 @@ export const translations = {
   'pt-BR': {
     // Global & Login
     "app.title": "Controle de Ocorrências",
+    "app.free_license": "SISTEMA DE USO GRATUITO",
+    "app.free_license_short": "GRÁTIS",
     "header.support": "Industrial Operations Platform",
     "footer.brand": "AXION • TECHNOLOGY",
     "common.previous": "Anterior",
@@ -411,6 +413,8 @@ export const translations = {
   'zh-CN': {
     // Global & Login
     "app.title": "工单管理系统",
+    "app.free_license": "免费系统",
+    "app.free_license_short": "免费",
     "header.support": "Industrial Operations Platform",
     "footer.brand": "AXION • TECHNOLOGY",
     "common.previous": "上一步",
@@ -816,6 +820,8 @@ export const translations = {
   'en-US': {
     // Global & Login
     "app.title": "Occurrence Control",
+    "app.free_license": "FREE SYSTEM LICENSE",
+    "app.free_license_short": "FREE",
     "header.support": "Industrial Operations Platform",
     "footer.brand": "AXION • TECHNOLOGY",
     "common.previous": "Previous",

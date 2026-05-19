@@ -191,9 +191,15 @@ export default function ExecutivePage() {
       <header className="flex justify-between items-center mb-8 shrink-0">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-white">
-              AXION
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black tracking-tight text-white">
+                AXION
+              </h1>
+              <span className="hidden min-[350px]:inline-flex text-[9px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase bg-zinc-850 dark:bg-zinc-900 px-1.5 py-0.5 rounded-none border border-zinc-700/50 dark:border-zinc-800/50">
+                <span className="hidden sm:inline">{t("app.free_license")}</span>
+                <span className="inline sm:hidden">{t("app.free_license_short")}</span>
+              </span>
+            </div>
             <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">{t("exec.subtitle")}</p>
           </div>
         </div>

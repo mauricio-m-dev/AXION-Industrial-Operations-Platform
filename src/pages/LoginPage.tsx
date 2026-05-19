@@ -91,10 +91,15 @@ export default function LoginPage() {
       >
         <Card className="rounded-sm shadow-md shadow-zinc-200/40 dark:shadow-none border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 transition-colors duration-300">
           <CardHeader className="pt-6 pb-2 text-center">
-            <div className="mb-3 flex justify-center items-center gap-2">
-              <span className="h-6 w-1.5 bg-[#DC2626] inline-block animate-pulse"></span>
-              <span className="text-2xl font-black tracking-widest text-[#DC2626] dark:text-red-500">
-                AXION
+            <div className="mb-3 flex flex-col justify-center items-center gap-1">
+              <div className="flex justify-center items-center gap-2">
+                <span className="h-6 w-1.5 bg-[#DC2626] inline-block animate-pulse"></span>
+                <span className="text-2xl font-black tracking-widest text-[#DC2626] dark:text-red-500">
+                  AXION
+                </span>
+              </div>
+              <span className="text-[9px] font-bold tracking-widest text-zinc-400 dark:text-zinc-500 uppercase mt-0.5 bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 border border-zinc-200/50 dark:border-zinc-700/50 rounded-none">
+                {t("app.free_license")}
               </span>
             </div>
             <CardTitle className="text-lg font-bold text-zinc-800 dark:text-zinc-100 tracking-tight">{t("login.admin")}</CardTitle>

@@ -524,6 +524,10 @@ export default function AdminPage() {
           <div className="flex items-center gap-2 z-10">
              <span className="h-5 w-1 bg-[#DC2626] inline-block animate-pulse"></span>
              <span className="text-xl font-black tracking-widest text-[#DC2626] dark:text-red-500">AXION</span>
+             <span className="hidden min-[350px]:inline-flex ml-1 text-[9px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase bg-zinc-800 dark:bg-zinc-900 px-1.5 py-0.5 rounded-none border border-zinc-700/50 dark:border-zinc-800/50">
+               <span className="hidden sm:inline">{t("app.free_license")}</span>
+               <span className="inline sm:hidden">{t("app.free_license_short")}</span>
+             </span>
           </div>
           
           <nav className="hidden md:flex items-center justify-center gap-2 absolute left-1/2 -translate-x-1/2">

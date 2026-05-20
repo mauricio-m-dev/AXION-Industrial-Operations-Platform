@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <rect width="192" height="192" fill="#ffffff" rx="42" />
-  <text x="96" y="104" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#000000" text-anchor="middle" dominant-baseline="middle" letter-spacing="-1">AXION</text>
+  <rect width="192" height="192" fill="#000000" rx="42" />
+  <rect x="22" y="74" width="8" height="44" fill="#DC2626" rx="2" />
+  <text x="40" y="112" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#DC2626" text-anchor="start" letter-spacing="-1">AXION</text>
 </svg>

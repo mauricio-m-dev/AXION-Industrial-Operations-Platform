@@ -552,7 +552,7 @@ export default function AdminPage() {
             
             {/* Apenas Desktop: Idioma */}
             <div className="hidden md:block">
-              <LanguageSelector />
+              <LanguageSelector minimalOnMobile={false} />
             </div>
             
             {/* Sempre visível (Desktop e Mobile): Sair */}
@@ -571,7 +571,7 @@ export default function AdminPage() {
            <div className="md:hidden bg-[#0A0A0A] border-b border-red-600/20 p-4 flex flex-col gap-3 z-[100] animate-in slide-in-from-top duration-200">
                <div className="flex items-center justify-end border-b border-zinc-800 pb-3 gap-2">
                   <ThemeToggle />
-                  <LanguageSelector />
+                  <LanguageSelector minimalOnMobile={false} />
                   <Button variant="ghost" size="icon" onClick={() => { fetchTickets(); fetchCriticalTickets(); }} className="rounded-full h-9 w-9 text-zinc-400 hover:text-red-500 hover:bg-red-500/20 transition-colors">
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-red-500' : ''}`} />
                   </Button>

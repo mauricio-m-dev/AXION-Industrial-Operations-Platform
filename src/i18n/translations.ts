@@ -11,6 +11,9 @@ export const translations = {
     "common.previous": "Anterior",
     "common.next": "Próximo",
     "common.page": "Página",
+    "lang.pt-BR": "PT-BR",
+    "lang.en-US": "Inglês",
+    "lang.zh-CN": "Chinês",
     // Login Page
     "login.title": "Acesso ao Sistema",
     "login.admin": "Painel de Administração",
@@ -420,6 +423,9 @@ export const translations = {
     "common.previous": "上一步",
     "common.next": "下一步",
     "common.page": "页码",
+    "lang.pt-BR": "PT-BR",
+    "lang.en-US": "英语",
+    "lang.zh-CN": "中文",
     // Login Page
     "login.title": "系统访问",
     "login.admin": "管理控制台",
@@ -827,6 +833,9 @@ export const translations = {
     "common.previous": "Previous",
     "common.next": "Next",
     "common.page": "Page",
+    "lang.pt-BR": "PT-BR",
+    "lang.en-US": "English",
+    "lang.zh-CN": "Chinese",
     // Login Page
     "login.title": "System Access",
     "login.admin": "Administration Panel",

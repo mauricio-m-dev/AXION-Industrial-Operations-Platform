@@ -26,48 +26,43 @@ export function SettingsContainer() {
           </p>
         </div>
 
-        <div className="flex flex-wrap sm:flex-nowrap bg-white dark:bg-zinc-900 p-1 rounded-sm border border-zinc-200 dark:border-zinc-800 shadow-sm dark:shadow-none w-full sm:w-fit transition-colors duration-300 overflow-x-auto hide-scrollbar">
+        <div className="flex bg-white dark:bg-zinc-900 p-1 rounded-sm border border-zinc-200 dark:border-zinc-800 shadow-sm dark:shadow-none w-full md:w-fit transition-colors duration-300">
           {isAuthorized && (
             <>
               <button
                 onClick={() => setActiveTab("users")}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-sm transition-all whitespace-nowrap ${
+                className={`flex-1 md:flex-none flex justify-center items-center px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all whitespace-nowrap ${
                   activeTab === "users"
                     ? "bg-[#DC2626] text-white shadow-md dark:shadow-none"
                     : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 }`}
               >
-                <Users size={16} />
                 {t("settings.access")}
               </button>
               
               <button
                 onClick={() => setActiveTab("audit")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-sm transition-all ${
+                className={`flex-1 md:flex-none flex justify-center items-center px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all whitespace-nowrap ${
                   activeTab === "audit"
                     ? "bg-[#DC2626] text-white shadow-md dark:shadow-none"
                     : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 }`}
               >
-                <Search size={16} />
                 {t("settings.audit")}
               </button>
 
               <button
                 onClick={() => setActiveTab("feedback")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-sm transition-all ${
+                className={`flex-1 md:flex-none flex justify-center items-center px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all whitespace-nowrap ${
                   activeTab === "feedback"
                     ? "bg-[#DC2626] text-white shadow-md dark:shadow-none"
                     : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 }`}
               >
-                <MessageSquare size={16} />
                 {t("settings.feedback")}
               </button>
             </>
           )}
-
-
         </div>
       </div>
 

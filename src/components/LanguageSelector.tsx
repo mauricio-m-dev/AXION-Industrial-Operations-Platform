@@ -4,8 +4,12 @@ import { Language } from '../i18n/translations';
 import { Globe, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function LanguageSelector() {
-  const { language, setLanguage } = useLanguage();
+interface LanguageSelectorProps {
+  minimalOnMobile?: boolean;
+}
+
+export function LanguageSelector({ minimalOnMobile = true }: LanguageSelectorProps) {
+  const { language, setLanguage, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,27 +37,30 @@ export function LanguageSelector() {
   }, [isOpen]);
 
   const languages = [
-    { code: 'pt-BR', label: 'PT-BR', flag: '🇧🇷' },
-    { code: 'en-US', label: 'English', flag: '🇺🇸' },
-    { code: 'zh-CN', label: '中文', flag: '🇨🇳' },
+    { code: 'pt-BR', label: t('lang.pt-BR') || 'PT-BR', flag: '🇧🇷' },
+    { code: 'en-US', label: t('lang.en-US') || 'English', flag: '🇺🇸' },
+    { code: 'zh-CN', label: t('lang.zh-CN') || 'Chinês', flag: '🇨🇳' },
   ];
 
   const currentLang = languages.find(l => l.code === language) || languages[0];
 
   return (
-    <div className="relative w-full sm:w-auto" ref={containerRef}>
+    <div className="relative w-auto" ref={containerRef}>
       {/* Botão Principal */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full sm:w-[140px] h-[clamp(2.75rem,8vw,3rem)] sm:h-9 px-4 flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm sm:rounded-sm shadow-sm hover:border-red-500 transition-all active:scale-[0.98] z-[200]"
+        className={`h-[clamp(2.75rem,8vw,3rem)] sm:h-9 px-2 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm sm:rounded-sm shadow-sm hover:border-red-500 transition-all active:scale-[0.98] z-[200] ${
+          minimalOnMobile ? 'w-auto sm:w-[140px]' : 'w-full sm:w-[140px]'
+        }`}
       >
-        <div className="flex items-center gap-2 overflow-hidden">
-          <Globe className="w-4 h-4 text-zinc-500 shrink-0" />
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden">
+          <Globe className={`w-4 h-4 text-zinc-500 shrink-0 ${minimalOnMobile ? 'hidden sm:block' : 'block'}`} />
           <span className="text-[clamp(0.85rem,2vw,0.9rem)] sm:text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
-            {currentLang.flag} {currentLang.label}
+            <span className={minimalOnMobile ? 'hidden sm:inline mr-1' : 'inline mr-1'}>{currentLang.flag}</span>
+            {currentLang.label}
           </span>
         </div>
-        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className="w-4 h-4 text-zinc-400 transition-transform duration-300 shrink-0" />
       </button>
 
       {/* Dropdown Menu */}
@@ -63,7 +70,9 @@ export function LanguageSelector() {
             initial={{ opacity: 0, y: openUp ? -10 : 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUp ? -10 : 10, scale: 0.95 }}
-            className={`absolute ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'} left-0 w-full sm:w-[180px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm sm:rounded-sm shadow-2xl z-[500] overflow-hidden`}
+            className={`absolute ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'} left-0 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-sm sm:rounded-sm shadow-2xl z-[500] overflow-hidden ${
+              minimalOnMobile ? 'w-full sm:w-[180px]' : 'w-[180px]'
+            }`}
           >
             <div className="p-1.5 flex flex-col gap-1">
               {languages.map((lang) => (

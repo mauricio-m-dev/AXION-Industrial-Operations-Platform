@@ -40,41 +40,38 @@ export function AnalyticsTab({ tickets, getStatusBadge }: Readonly<Props>) {
   const { t } = useLanguage();
 
   const subTabNav = (
-    <div className="flex flex-wrap bg-white dark:bg-zinc-900 p-1 rounded-sm border border-zinc-200 dark:border-zinc-800 shadow-sm w-full md:w-fit shrink-0 transition-colors duration-300">
+    <div className="flex bg-white dark:bg-zinc-900 p-1 rounded-sm border border-zinc-200 dark:border-zinc-800 shadow-sm w-full md:w-fit shrink-0 transition-colors duration-300">
       <button
         onClick={() => setActiveSubTab("overview")}
-        className={`flex-1 md:flex-none flex justify-center items-center gap-[clamp(0.25rem,1vw,0.5rem)] px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all ${
+        className={`flex-1 md:flex-none flex justify-center items-center px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all ${
           activeSubTab === "overview"
             ? "bg-[#DC2626] text-white shadow-md"
             : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
         }`}
       >
-        <PieChartIcon className="w-[clamp(0.875rem,2vw,1rem)] h-[clamp(0.875rem,2vw,1rem)]" />
         <span className="hidden sm:inline">{t("analytics.overview")}</span>
         <span className="sm:hidden">{t("analytics.overview").split(' ')[0]}</span>
       </button>
       
       <button
         onClick={() => setActiveSubTab("mttr")}
-        className={`flex-1 md:flex-none flex justify-center items-center gap-[clamp(0.25rem,1vw,0.5rem)] px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all ${
+        className={`flex-1 md:flex-none flex justify-center items-center px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all ${
           activeSubTab === "mttr"
             ? "bg-[#DC2626] text-white shadow-md"
             : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
         }`}
       >
-        <Clock className="w-[clamp(0.875rem,2vw,1rem)] h-[clamp(0.875rem,2vw,1rem)]" />
         <span>{t("analytics.mttr")}</span>
       </button>
 
       <button
         onClick={() => setActiveSubTab("mtbf")}
-        className={`flex-1 md:flex-none flex justify-center items-center gap-[clamp(0.25rem,1vw,0.5rem)] px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all ${
+        className={`flex-1 md:flex-none flex justify-center items-center px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold rounded-sm transition-all ${
           activeSubTab === "mtbf"
             ? "bg-[#DC2626] text-white shadow-md"
             : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
         }`}
       >
-        <Clock className="w-[clamp(0.875rem,2vw,1rem)] h-[clamp(0.875rem,2vw,1rem)]" />
         <span>{t("analytics.mtbf")}</span>
       </button>
     </div>

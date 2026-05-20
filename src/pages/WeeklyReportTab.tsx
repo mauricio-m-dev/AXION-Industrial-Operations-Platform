@@ -300,12 +300,12 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
       {/* Actions & Navigation */}
       <div className="flex flex-col lg:flex-row justify-between items-center gap-4 shrink-0">
         {nav}
-        <div className="flex flex-wrap items-center gap-3 print:hidden">
-          <Button onClick={generatePDFReport} className="h-10 px-6 rounded-sm font-black gap-2 shadow-md shadow-blue-500/20 bg-red-600 text-white hover:bg-red-700 transition-all active:scale-95">
-            <FileText size={18} /> {t("report.generate_pdf")}
+        <div className="flex w-full md:w-auto items-center gap-3 print:hidden">
+          <Button onClick={generatePDFReport} className="flex-1 md:flex-none h-10 px-4 md:px-6 rounded-sm font-black gap-2 shadow-md shadow-blue-500/20 bg-red-600 text-white hover:bg-red-700 transition-all active:scale-95 text-xs md:text-sm">
+            <FileText size={18} className="shrink-0" /> {t("report.generate_pdf")}
           </Button>
-          <Button onClick={exportCSV} variant="outline" className="h-10 px-4 rounded-sm font-bold gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300">
-            <Download size={16} /> CSV
+          <Button onClick={exportCSV} variant="outline" className="flex-1 md:flex-none h-10 px-4 rounded-sm font-bold gap-2 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs md:text-sm">
+            <Download size={16} className="shrink-0" /> CSV
           </Button>
         </div>
       </div>

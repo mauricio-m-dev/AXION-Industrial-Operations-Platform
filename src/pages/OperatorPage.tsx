@@ -116,7 +116,13 @@ export default function OperatorPage() {
 
 
   const nextStep = () => setStep(prev => prev + 1);
-  const prevStep = () => setStep(prev => prev - 1);
+  const prevStep = () => {
+    if (step === 1) {
+      sessionStorage.removeItem("operator-data");
+      sessionStorage.removeItem("operator-token");
+    }
+    setStep(prev => prev - 1);
+  };
 
   const handleTypeSelect = (type: string) => {
     if (type === "Colisão") {
@@ -235,7 +241,7 @@ export default function OperatorPage() {
       {/* Header */}
       <header className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 h-16 shrink-0 flex items-center justify-between z-50 transition-colors duration-300 relative">
         <div className="flex items-center gap-4 z-10">
-          {step > 1 && step < 4 && (
+          {step > 0 && step < 4 && (
             <Button variant="ghost" onClick={prevStep} className="font-semibold text-xs text-zinc-500 dark:text-zinc-400 gap-2 h-9 rounded-none px-3 hover:text-[#DC2626] dark:hover:text-red-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
               <ArrowLeft size={14} />
               <span className="hidden sm:inline">{t("op.back")}</span>

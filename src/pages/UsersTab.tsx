@@ -287,7 +287,7 @@ export function UsersTab() {
                 </select>
               </div>
 
-              {role === "Moderador" && (
+              {(role === "Moderador" || role === "Admin") && (
                 <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 animate-in fade-in-50 duration-300">
                   <div className="flex flex-col">
                     <label className="text-[11px] font-black uppercase tracking-widest text-[#DC2626] dark:text-red-400">
@@ -690,7 +690,7 @@ export function UsersTab() {
                     </select>
                   </div>
 
-                  {editUser.role === "Moderador" && (
+                  {(editUser.role === "Moderador" || editUser.role === "Admin") && (
                     <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 animate-in fade-in-50 duration-300">
                       <div className="flex flex-col">
                         <label className="text-[11px] font-black uppercase tracking-widest text-[#DC2626] dark:text-red-400">

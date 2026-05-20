@@ -376,7 +376,7 @@ router.patch("/:id/start", requireAuth, async (req: AuthenticatedRequest, res: R
   try {
     let { assigned_to } = req.body;
     
-    if (req.user.role !== 'SuperAdmin') {
+    if (req.user.role !== 'SuperAdmin' && req.user.role !== 'Admin') {
       assigned_to = req.user.username;
     }
 
@@ -475,9 +475,9 @@ router.patch("/:id/finish", requireAuth, localLimiter, apiLimiter, handleResolut
       }
     }
 
-    if (req.user.role !== "SuperAdmin" && ticket.assigned_to !== req.user.username) {
+    if (req.user.role !== "SuperAdmin" && req.user.role !== "Admin" && ticket.assigned_to !== req.user.username) {
       safeUnlinkReqFile(req.file);
-      return res.status(403).json({ error: "Apenas o responsável ou SuperAdmin podem finalizar este chamado" });
+      return res.status(403).json({ error: "Apenas o responsável, Admin ou SuperAdmin podem finalizar este chamado" });
     }
 
     const finishedAt = new Date();

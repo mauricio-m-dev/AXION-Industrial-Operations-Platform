@@ -99,6 +99,7 @@ export default function AdminPage() {
   // Modal states for Service Workflow
   const [startTicketId, setStartTicketId] = useState<string | null>(null);
   const [assignedToUser, setAssignedToUser] = useState("");
+  const [assignSearch, setAssignSearch] = useState("");
 
   const [finishTicketId, setFinishTicketId] = useState<string | null>(null);
   const [resolutionReport, setResolutionReport] = useState("");
@@ -134,7 +135,7 @@ export default function AdminPage() {
     setUserRole(role);
     fetchTickets();
     fetchCriticalTickets(); // Busca chamados críticos na carga inicial
-    if (role === "SuperAdmin") {
+    if (role === "SuperAdmin" || role === "Admin") {
       fetchUsers();
     }
 
@@ -895,10 +896,10 @@ export default function AdminPage() {
                     active={selectedTicket.status === "Finalizado"}
                     onClick={() => {
                       const username = localStorage.getItem("admin-username") || "";
-                      if (userRole === "SuperAdmin" || selectedTicket.assigned_to === username) {
+                      if (userRole === "SuperAdmin" || userRole === "Admin" || selectedTicket.assigned_to === username) {
                         setFinishTicketId(selectedTicket.id);
                       } else {
-                        toast.error(t("toast.finish_error_auth") || "Apenas o responsável pelo atendimento ou um SuperAdmin podem finalizar este chamado.");
+                        toast.error(t("toast.finish_error_auth") || "Apenas o responsável pelo atendimento, Admin ou SuperAdmin podem finalizar este chamado.");
                       }
                     }}
                     activeColor="bg-zinc-900 dark:bg-zinc-800 shadow-md shadow-zinc-900/30 dark:shadow-none"
@@ -934,16 +935,35 @@ export default function AdminPage() {
               <div className="p-6 space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">{t("res.resp")}</label>
-                  <select
-                    value={assignedToUser}
-                    onChange={(e) => setAssignedToUser(e.target.value)}
-                    className="w-full h-12 px-4 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 font-medium text-sm text-zinc-900 dark:text-zinc-100 focus:border-red-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors outline-none shadow-sm"
-                  >
-                    <option value="" disabled>{t("modal.select_user")}</option>
-                    {usersList.filter((u: any) => u.role !== "Usuário").map((u: any) => (
-                      <option key={u.id} value={u.matricula} className="bg-white dark:bg-zinc-900">{u.username} ({u.matricula})</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                    <Input
+                      placeholder={t("filter.search")}
+                      value={assignSearch}
+                      onChange={(e) => setAssignSearch(e.target.value)}
+                      className="pl-9 h-12 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 font-medium text-sm text-zinc-900 dark:text-zinc-100 focus:border-red-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors shadow-sm w-full"
+                    />
+                  </div>
+                  <div className="max-h-40 overflow-y-auto bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 mt-1 rounded-sm shadow-inner custom-scrollbar">
+                    {usersList
+                      .filter((u: any) => u.role !== "Usuário")
+                      .filter((u: any) => {
+                        const s = assignSearch.toLowerCase();
+                        return u.username.toLowerCase().includes(s) || u.matricula.toLowerCase().includes(s);
+                      })
+                      .map((u: any) => (
+                        <div
+                          key={u.id}
+                          onClick={() => setAssignedToUser(u.matricula)}
+                          className={`p-3 cursor-pointer text-sm transition-colors border-b border-zinc-50 dark:border-zinc-900 last:border-0 ${assignedToUser === u.matricula ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold" : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{u.username}</span>
+                            <span className="text-xs font-mono opacity-70">{u.matricula}</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">

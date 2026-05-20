@@ -214,7 +214,7 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
     // By Status
     const byStatus = [
       { name: t("status.open"), value: stats.open, color: "#ef4444" }, // Red
-      { name: t("status.progress"), value: stats.pending, color: "#ef4444" }, // Blue
+      { name: t("status.progress"), value: stats.pending, color: "#f59e0b" }, // Amber
       { name: t("status.finished"), value: stats.closed, color: "#10b981" }, // Green
     ].filter(s => s.value > 0);
 
@@ -413,7 +413,7 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
           <div className="flex-1 p-5 min-h-[300px]">
             {chartsData.byDate.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <AreaChart data={chartsData.byDate} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                <AreaChart data={chartsData.byDate} margin={{ top: 10, right: 10, bottom: 0, left: 5 }}>
                   <defs>
                     <linearGradient id="colorTotalRep" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />

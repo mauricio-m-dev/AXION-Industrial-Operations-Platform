@@ -72,7 +72,7 @@ services:
     container_name: axion_nginx
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "80:80"
       - "8443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d

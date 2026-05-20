@@ -237,7 +237,8 @@ export default function OperatorPage() {
         <div className="flex items-center gap-4 z-10">
           {step > 1 && step < 4 && (
             <Button variant="ghost" onClick={prevStep} className="font-semibold text-xs text-zinc-500 dark:text-zinc-400 gap-2 h-9 rounded-none px-3 hover:text-[#DC2626] dark:hover:text-red-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
-              <ArrowLeft size={14} /> {t("op.back")}
+              <ArrowLeft size={14} />
+              <span className="hidden sm:inline">{t("op.back")}</span>
             </Button>
           )}
           

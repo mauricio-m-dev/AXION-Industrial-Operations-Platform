@@ -31,10 +31,13 @@ const localLimiter = rateLimit({
 const TICKETS_CACHE_KEY = "api:tickets:all";
 const redisBreaker = new CircuitBreaker("RedisCache", 3, 10000);
 
+const TICKETS_STATS_CACHE_KEY = "api:tickets:stats";
+
 const clearTicketsCache = async () => {
   try {
     if (redisClient.isOpen) {
       await redisClient.del(TICKETS_CACHE_KEY);
+      await redisClient.del(TICKETS_STATS_CACHE_KEY);
     }
   } catch (err) {
     log(`Redis Cache Clear Error: ${err}`, "ERROR");
@@ -169,14 +172,62 @@ router.get("/stats", requireAuth, async (req: AuthenticatedRequest, res: Respons
       baseQuery.type = { $in: allowedTypes };
     }
 
-    const total = await Ticket.countDocuments({ ...baseQuery });
-    const open = await Ticket.countDocuments({ ...baseQuery, status: "Aberto" });
-    const pending = await Ticket.countDocuments({ ...baseQuery, status: "Em atendimento" });
-    const finished = await Ticket.countDocuments({ ...baseQuery, status: "Finalizado" });
-    const critical = await Ticket.countDocuments({ ...baseQuery, priority: "Crítico" });
-    const high = await Ticket.countDocuments({ ...baseQuery, priority: "Alto" });
+    // Check Redis cache for stats (only when no moderator filter)
+    const useStatsCache = Object.keys(baseQuery).length === 0;
+    if (useStatsCache) {
+      try {
+        const cached = await redisBreaker.fire(
+          () => redisClient.get(TICKETS_STATS_CACHE_KEY),
+          () => Promise.resolve(null)
+        );
+        if (cached) return res.json(JSON.parse(cached));
+      } catch {}
+    }
 
-    res.json({ total, open, pending, finished, critical, high });
+    // Single aggregation instead of 6 sequential countDocuments
+    const matchStage = Object.keys(baseQuery).length > 0 ? [{ $match: baseQuery }] : [];
+    const statusPipeline = [
+      ...matchStage,
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ];
+    const priorityPipeline = [
+      ...matchStage,
+      { $group: { _id: "$priority", count: { $sum: 1 } } }
+    ];
+    const [statusCounts, priorityCounts] = await Promise.all([
+      Ticket.aggregate(statusPipeline),
+      Ticket.aggregate(priorityPipeline)
+    ]);
+
+    const statusMap: Record<string, number> = {};
+    for (const item of statusCounts) {
+      statusMap[item._id || "Unknown"] = item.count;
+    }
+    const priorityMap: Record<string, number> = {};
+    for (const item of priorityCounts) {
+      priorityMap[item._id || "Unknown"] = item.count;
+    }
+
+    const total = Object.values(statusMap).reduce((a, b) => a + b, 0);
+    const open = statusMap["Aberto"] || 0;
+    const pending = statusMap["Em atendimento"] || 0;
+    const finished = statusMap["Finalizado"] || 0;
+    const critical = priorityMap["Crítico"] || 0;
+    const high = priorityMap["Alto"] || 0;
+
+    const statsResponse = { total, open, pending, finished, critical, high };
+
+    // Cache stats result with 30s TTL
+    if (useStatsCache) {
+      try {
+        await redisBreaker.fire(
+          () => redisClient.setEx(TICKETS_STATS_CACHE_KEY, 30, JSON.stringify(statsResponse)),
+          () => Promise.resolve("")
+        );
+      } catch {}
+    }
+
+    res.json(statsResponse);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
     log(`Fetch Stats Error: ${errMsg}`, "ERROR");
@@ -193,7 +244,7 @@ router.get("/export", requireAuth, async (req: AuthenticatedRequest, res: Respon
       const allowedTypes = userDoc?.allowedTicketTypes || [];
       baseQuery.type = { $in: allowedTypes };
     }
-    const tickets = await Ticket.find(baseQuery).sort({ created_at: -1 });
+    const tickets = await Ticket.find(baseQuery).sort({ created_at: -1 }).lean();
     
     // Header do CSV
     let csvStr = "ID,Type,Status,Priority,Location,Operator,Matricula,Created_At,Resolved_At,MTTR_Min\n";
@@ -292,9 +343,11 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response) =>
       const skip = (page - 1) * limit;
       const total = await Ticket.countDocuments(filter);
       const tickets = await Ticket.find(filter)
+        .select('-resolution_report -images -__v')
         .sort({ created_at: -1 })
         .skip(skip)
-        .limit(limit);
+        .limit(limit)
+        .lean();
 
       return res.json({
         data: tickets,
@@ -321,7 +374,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response) =>
       }
     }
 
-    const tickets = await Ticket.find(filter).sort({ created_at: -1 });
+    const tickets = await Ticket.find(filter).select('-resolution_report -images -__v').sort({ created_at: -1 }).lean();
 
     if (useCache && redisClient.isOpen) {
       try {

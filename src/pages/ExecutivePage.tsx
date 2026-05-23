@@ -27,7 +27,7 @@ export default function ExecutivePage() {
     queryKey: ['executiveTickets'],
     queryFn: async () => {
       const response = await fetch("/api/tickets", {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
       if (response.status === 401) {
         localStorage.removeItem("admin-token");

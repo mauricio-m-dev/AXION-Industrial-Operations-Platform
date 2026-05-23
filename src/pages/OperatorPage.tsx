@@ -37,6 +37,7 @@ export default function OperatorPage() {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { t } = useLanguage();
   
   const PROBLEM_TYPES = [
@@ -75,6 +76,15 @@ export default function OperatorPage() {
     }
   }, []);
 
+  // Cleanup de memória do Blob de imagem no unmount ou quando o preview mudar/limpar
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const handleOperatorLogin = async () => {
     if (!operatorInfo.matricula || !operatorInfo.password) {
       toast.error(t("error.send"));
@@ -100,7 +110,6 @@ export default function OperatorPage() {
           matricula: data.user.matricula
         };
         sessionStorage.setItem("operator-data", JSON.stringify(loggedInfo));
-        sessionStorage.setItem("operator-token", data.token);
         setOperatorInfo({...operatorInfo, ...loggedInfo});
         toast.success(t("success.photo") || "Operador identificado!");
         setStep(1);
@@ -119,7 +128,26 @@ export default function OperatorPage() {
   const prevStep = () => {
     if (step === 1) {
       sessionStorage.removeItem("operator-data");
-      sessionStorage.removeItem("operator-token");
+      setOperatorInfo({ name: "", matricula: "", password: "" });
+    }
+    // Cleanup de estado completo ao voltar
+    if (step > 1) {
+      setFormData({
+        type: "",
+        location: searchParams.get("linha") || "",
+        agv_number: "",
+        part_name: "",
+        sap_number: "",
+        side: "",
+        observation: "",
+        impact: "",
+        downtime: "",
+        image: null,
+      });
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
     }
     setStep(prev => prev - 1);
   };
@@ -146,6 +174,14 @@ export default function OperatorPage() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Criar URL de preview e limpar anterior se existir
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      const newPreviewUrl = URL.createObjectURL(file);
+      setImagePreview(newPreviewUrl);
+
       try {
         const imageCompression = (await import('browser-image-compression')).default;
         const options = { maxSizeMB: 1, maxWidthOrHeight: 1280, useWebWorker: false };
@@ -184,11 +220,10 @@ export default function OperatorPage() {
     }
 
     try {
-      const token = sessionStorage.getItem("operator-token");
       const response = await fetch("/api/tickets", { 
         method: "POST", 
         headers: { 
-          "Authorization": `Bearer ${token}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         },
         body: data 
@@ -198,9 +233,27 @@ export default function OperatorPage() {
         setTicketId(result.ticketId);
         setFeedbackText("");
         setFeedbackSent(false);
+        if (imagePreview) {
+          URL.revokeObjectURL(imagePreview);
+          setImagePreview(null);
+        }
         setStep(4);
       } else {
-        toast.error(result.error || t("error.send"));
+        let errorMsg = result.error || t("error.send");
+        if (result.details) {
+          const details = result.details;
+          const fieldErrors: string[] = [];
+          for (const key of Object.keys(details)) {
+            if (key !== "_errors" && details[key]?._errors?.length > 0) {
+              const translatedKey = key === "agv_number" ? "AGV" : key === "operator_matricula" ? "Matrícula" : key;
+              fieldErrors.push(`${translatedKey}: ${details[key]._errors.join(", ")}`);
+            }
+          }
+          if (fieldErrors.length > 0) {
+            errorMsg = `${t("error.send")} (${fieldErrors.join(" | ")})`;
+          }
+        }
+        toast.error(errorMsg);
       }
     } catch (error) {
       toast.error(t("error.send"));
@@ -358,6 +411,8 @@ export default function OperatorPage() {
 
                 <Button 
                   onClick={handleOperatorLogin}
+                  data-track="true"
+                  data-action="OPERATOR_LOGIN"
                   disabled={operatorInfo.matricula.length !== 7 || !operatorInfo.password || submitting /* || !termsAccepted */}
                   className="h-[clamp(3.5rem,8vw,4rem)] w-full rounded-sm bg-zinc-900 dark:bg-red-600 text-white font-bold uppercase tracking-widest text-[clamp(0.6rem,1.5vw,0.75rem)] hover:bg-zinc-800 dark:hover:bg-red-700 transition-all shadow-md mt-[clamp(1rem,4vw,1.5rem)]"
                 >
@@ -441,9 +496,17 @@ export default function OperatorPage() {
                     <Label className="text-[clamp(0.6rem,1.5vw,0.65rem)] font-bold uppercase text-zinc-400 dark:text-zinc-500 tracking-widest pl-1">{t("op.agv_num")} <span className="text-[#DC2626] dark:text-red-400">*</span></Label>
                     <Input 
                       placeholder={t("op.agv.placeholder")}
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={10}
                       value={formData.agv_number}
-                      onChange={(e) => setFormData({...formData, agv_number: e.target.value})}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        if (val.length <= 10) {
+                          setFormData({...formData, agv_number: val});
+                        }
+                      }}
                       className="h-[clamp(3.5rem,10vw,4rem)] text-[clamp(1.25rem,4vw,1.5rem)] font-bold rounded-sm border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 dark:text-zinc-100 focus:border-[#DC2626] dark:focus:border-red-500 focus:ring-2 focus:ring-[#DC2626]/20 shadow-sm text-center tracking-[0.2em] transition-all"
                     />
                   </div>
@@ -576,8 +639,15 @@ export default function OperatorPage() {
               <div className="space-y-[clamp(1.5rem,4vw,2rem)]">
                 <div className="space-y-[clamp(0.5rem,1vw,1rem)]">
                   <Label className="text-[clamp(0.6rem,1.5vw,0.65rem)] font-bold uppercase text-zinc-400 dark:text-zinc-500 tracking-widest pl-1">{t("op.step3.visual")} <span className="text-zinc-400 dark:text-zinc-500 text-[10px] lowercase font-normal">(opcional)</span></Label>
-                  <label className="flex flex-col items-center justify-center h-[clamp(10rem,25vw,14rem)] border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-sm cursor-pointer bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:border-[#DC2626]/40 dark:hover:border-red-500/50 hover:shadow-md transition-all group">
-                    {formData.image ? (
+                  <label className="flex flex-col items-center justify-center h-[clamp(10rem,25vw,14rem)] border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-sm cursor-pointer bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:border-[#DC2626]/40 dark:hover:border-red-500/50 hover:shadow-md transition-all group overflow-hidden relative">
+                    {imagePreview ? (
+                      <div className="absolute inset-0 w-full h-full">
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                        </div>
+                      </div>
+                    ) : formData.image ? (
                       <div className="text-center">
                         <CheckCircle2 className="w-8 h-8 text-green-500 dark:text-green-400 mx-auto mb-2" />
                         <p className="text-[9px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">{t("op.file_attached")}</p>
@@ -605,6 +675,8 @@ export default function OperatorPage() {
 
               <Button 
                 onClick={handleSubmit}
+                data-track="true"
+                data-action="OPEN_TICKET"
                 disabled={submitting || !formData.observation.trim()}
                 className="h-[clamp(3.5rem,8vw,4rem)] w-full rounded-sm bg-[#DC2626] dark:bg-red-600 text-white font-bold uppercase tracking-widest text-[clamp(0.6rem,1.5vw,0.75rem)] hover:bg-[#B91C1C] dark:hover:bg-red-700 transition-all shadow-md mt-2 disabled:opacity-70"
               >
@@ -648,6 +720,8 @@ export default function OperatorPage() {
                   />
                   <Button 
                     onClick={handleSendFeedback}
+                    data-track="true"
+                    data-action="SEND_FEEDBACK"
                     disabled={!feedbackText.trim()}
                     className="w-full h-[clamp(3rem,8vw,3.5rem)] bg-[#DC2626] dark:bg-red-600 hover:bg-[#B91C1C] dark:hover:bg-red-700 text-white font-bold text-[clamp(0.75rem,2vw,0.875rem)] rounded-sm transition-all"
                   >
@@ -664,6 +738,10 @@ export default function OperatorPage() {
                 className="w-full h-[clamp(3.5rem,8vw,4rem)] text-[clamp(0.6rem,1.5vw,0.75rem)] font-bold uppercase tracking-widest rounded-sm bg-zinc-900 dark:bg-red-600 hover:bg-zinc-800 dark:hover:bg-red-700 text-white shadow-md transition-all"
                 onClick={() => {
                   setFormData({ ...formData, type: "", agv_number: "", part_name: "", sap_number: "", side: "", observation: "", impact: "", downtime: "", image: null });
+                  if (imagePreview) {
+                    URL.revokeObjectURL(imagePreview);
+                    setImagePreview(null);
+                  }
                   setStep(1);
                 }}
               >

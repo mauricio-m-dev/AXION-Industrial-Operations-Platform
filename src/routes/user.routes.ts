@@ -6,8 +6,15 @@ import { log } from "../utils/logger";
 import { requireAuth, requireSuperAdmin, requireAdmin } from "../middleware/auth";
 import { userSchema } from "../models/schemas";
 import type { AuthenticatedRequest } from "../types/express";
+import redisClient from "../config/redis";
+import { CircuitBreaker } from "../utils/circuitBreaker";
 
 const router = Router();
+const redisBreaker = new CircuitBreaker("redis-users", 3, 10000);
+
+async function clearUsersCache() {
+  try { await redisClient.del("api:users:list"); } catch {}
+}
 
 router.post("/", requireAuth, requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -34,8 +41,10 @@ router.post("/", requireAuth, requireAdmin, async (req: AuthenticatedRequest, re
     const id = uuidv4();
     const userRole = role || 'Usuário';
 
-    if (userRole === "SuperAdmin" && req.user.role !== "SuperAdmin") {
-      return res.status(403).json({ error: "Apenas SuperAdmins podem criar novos SuperAdmins" });
+    if (userRole === "SuperAdmin" || userRole === "Admin") {
+      if (req.user.role !== "SuperAdmin") {
+        return res.status(403).json({ error: "Apenas SuperAdmins podem criar novos Administradores ou SuperAdmins" });
+      }
     }
 
     await User.create({ 
@@ -43,6 +52,7 @@ router.post("/", requireAuth, requireAdmin, async (req: AuthenticatedRequest, re
       whatsapp, email, notificationPreference, allowedTicketTypes: allowedTicketTypes || []
     });
     log(`User created: ${username}`);
+    await clearUsersCache();
     res.json({ success: true, user: { id, username, role: userRole, notificationPreference, allowedTicketTypes: allowedTicketTypes || [] } });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -57,7 +67,24 @@ router.get("/", requireAuth, requireAdmin, async (req: AuthenticatedRequest, res
     if (limit > 1000) {
       return res.status(400).json({ error: "Limite máximo de registros excedido. Parâmetros inválidos." });
     }
-    const users = await User.find({}, { _id: 0, id: 1, username: 1, matricula: 1, role: 1, whatsapp: 1, email: 1, notificationPreference: 1, allowedTicketTypes: 1 }).sort({ username: 1 });
+
+    try {
+      const cached = await redisBreaker.fire(
+        () => redisClient.get("api:users:list"),
+        () => Promise.resolve(null)
+      );
+      if (cached) return res.json(JSON.parse(cached));
+    } catch {}
+
+    const users = await User.find({}, { _id: 0, id: 1, username: 1, matricula: 1, role: 1, whatsapp: 1, email: 1, notificationPreference: 1, allowedTicketTypes: 1 }).sort({ username: 1 }).lean();
+
+    try {
+      await redisBreaker.fire(
+        () => redisClient.setEx("api:users:list", 60, JSON.stringify(users)),
+        () => Promise.resolve("")
+      );
+    } catch {}
+
     res.json(users);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -85,6 +112,7 @@ router.delete("/:id", requireAuth, requireAdmin, async (req: AuthenticatedReques
 
     await User.deleteOne({ id });
     log(`User deleted: ${user.username}`);
+    await clearUsersCache();
     res.json({ success: true });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -108,8 +136,10 @@ router.put("/:id", requireAuth, requireAdmin, async (req: AuthenticatedRequest, 
       return res.status(403).json({ error: "Você não tem permissão para editar um SuperAdmin" });
     }
 
-    if (role === "SuperAdmin" && req.user.role !== "SuperAdmin") {
-      return res.status(403).json({ error: "Apenas SuperAdmins podem conceder o cargo SuperAdmin" });
+    if (role === "SuperAdmin" || role === "Admin") {
+      if (req.user.role !== "SuperAdmin") {
+        return res.status(403).json({ error: "Apenas SuperAdmins podem conceder o cargo Admin ou SuperAdmin" });
+      }
     }
     
     if (username) user.username = username;
@@ -128,13 +158,17 @@ router.put("/:id", requireAuth, requireAdmin, async (req: AuthenticatedRequest, 
     if (notificationPreference) user.notificationPreference = notificationPreference;
     if (allowedTicketTypes !== undefined) user.allowedTicketTypes = allowedTicketTypes;
     
-    if (typeof password === "string" && password.length >= 6) {
+    if (password) {
+      if (typeof password !== "string" || password.length < 6 || password.length > 64) {
+        return res.status(400).json({ error: "A senha deve ter no mínimo 6 caracteres" });
+      }
       user.password = await argon2.hash(password);
     }
 
     user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
     log(`User updated: ${user.username}`);
+    await clearUsersCache();
     res.json({ success: true, user: { id: user.id, username: user.username, role: user.role, notificationPreference: user.notificationPreference, allowedTicketTypes: user.allowedTicketTypes } });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);

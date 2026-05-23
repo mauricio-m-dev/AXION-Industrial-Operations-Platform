@@ -261,7 +261,7 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin-token') || ''}`,
+          
           'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({

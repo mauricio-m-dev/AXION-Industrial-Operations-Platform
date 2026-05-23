@@ -44,6 +44,18 @@ router.post("/flush-redis", requireAuth, requireSuperAdmin, async (req: Authenti
   }
 });
 
+router.get("/blacklist", requireAuth, requireSuperAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (redisClient.isOpen) {
+      const ips = await redisClient.sMembers("ip_blacklist");
+      return res.json(ips);
+    }
+    res.status(400).json({ error: "Redis indisponível." });
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
 router.post("/maintenance", requireAuth, requireSuperAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { enabled } = req.body;
@@ -87,7 +99,7 @@ router.get("/metrics/history", requireAuth, requireSuperAdmin, async (req: Authe
     const { hours = 24 } = req.query;
     const since = new Date(Date.now() - (Number(hours) * 60 * 60 * 1000));
 
-    const metrics = await ApmMetric.find({ timestamp: { $gte: since } }).sort({ timestamp: 1 });
+    const metrics = await ApmMetric.find({ timestamp: { $gte: since } }).sort({ timestamp: 1 }).limit(2000).lean();
     res.json(metrics);
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
@@ -96,7 +108,7 @@ router.get("/metrics/history", requireAuth, requireSuperAdmin, async (req: Authe
 
 router.get("/reports", requireAuth, requireSuperAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const reports = await ApmReport.find().sort({ created_at: -1 });
+    const reports = await ApmReport.find().sort({ created_at: -1 }).lean();
     res.json(reports);
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
@@ -120,9 +132,9 @@ router.post("/reports/generate", requireAuth, requireSuperAdmin, async (req: Aut
     }
 
     // 1. Coleta de Dados do Período
-    const metrics = await ApmMetric.find({ timestamp: { $gte: periodStart, $lte: periodEnd } });
-    const auditLogs = await AuditLog.find({ timestamp: { $gte: periodStart, $lte: periodEnd } });
-    const tickets = await Ticket.find({ created_at: { $gte: periodStart, $lte: periodEnd } });
+    const metrics = await ApmMetric.find({ timestamp: { $gte: periodStart, $lte: periodEnd } }).lean();
+    const auditLogs = await AuditLog.find({ timestamp: { $gte: periodStart, $lte: periodEnd } }).lean();
+    const tickets = await Ticket.find({ created_at: { $gte: periodStart, $lte: periodEnd } }).lean();
 
     // 2. Análise Inteligente via Módulo de Inteligência Axion
     const avgCpu = metrics.reduce((a, b) => a + (b.cpu_usage || 0), 0) / (metrics.length || 1);

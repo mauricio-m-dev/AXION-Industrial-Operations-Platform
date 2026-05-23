@@ -67,7 +67,7 @@ export function UsersTab() {
     setLoading(true);
     try {
       const response = await fetch("/api/users", {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
       if (response.status === 401) {
         localStorage.removeItem("admin-token");
@@ -114,7 +114,7 @@ export function UsersTab() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify({ username, matricula, password, role, whatsapp, email, notificationPreference, allowedTicketTypes }),
@@ -146,7 +146,7 @@ export function UsersTab() {
       const response = await fetch(`/api/users/${id}`, {
         method: "DELETE",
         headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         }
       });
@@ -174,7 +174,7 @@ export function UsersTab() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify(editUser),
@@ -673,6 +673,11 @@ export function UsersTab() {
                       onChange={(e) => setEditUser({ ...editUser, password: e.target.value })}
                       className="h-11 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-100 rounded-none focus:border-red-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
                     />
+                    {editUser.password && editUser.password.length < 6 && (
+                      <p className="text-[10px] text-red-500 font-bold mt-1">
+                        A senha deve ter no mínimo 6 caracteres.
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">{t("users.role")}</label>
@@ -776,7 +781,12 @@ export function UsersTab() {
                 <Button variant="ghost" onClick={() => setEditUser(null)} className="rounded-none font-bold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                   {t("users.cancel")}
                 </Button>
-                <Button type="submit" form="edit-user-form" disabled={submitLoading} className="rounded-none font-bold bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-md shadow-[#DC2626]/20">
+                <Button 
+                  type="submit" 
+                  form="edit-user-form" 
+                  disabled={submitLoading || (!!editUser.password && editUser.password.length < 6) || editUser.matricula?.length !== 7} 
+                  className="rounded-none font-bold bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-md shadow-[#DC2626]/20 disabled:opacity-50"
+                >
                   {submitLoading ? <Loader2 className="animate-spin h-5 w-5" /> : t("users.save")}
                 </Button>
               </div>

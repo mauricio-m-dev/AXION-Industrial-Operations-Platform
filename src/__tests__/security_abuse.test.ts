@@ -91,6 +91,7 @@ vi.mock("../models/mongoose", () => {
         };
       }),
       countDocuments: vi.fn().mockResolvedValue(2),
+      aggregate: vi.fn().mockResolvedValue([]),
       updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 })
     },
     AuditLog: { create: vi.fn().mockResolvedValue(true) },

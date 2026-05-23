@@ -71,6 +71,7 @@ interface Ticket {
   started_at?: string;
   finished_at?: string;
   assigned_to?: string;
+  resolution_report?: string | null;
 }
 
 export default function AdminPage() {
@@ -191,7 +192,7 @@ export default function AdminPage() {
       });
 
       const response = await fetch(`/api/tickets?${params.toString()}`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
 
       if (response.status === 401) {
@@ -224,7 +225,7 @@ export default function AdminPage() {
   const fetchStats = async () => {
     try {
       const res = await fetch("/api/tickets/stats", {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
       if (res.ok) {
         const data = await res.json();
@@ -245,7 +246,7 @@ export default function AdminPage() {
       });
 
       const response = await fetch(`/api/tickets?${params.toString()}`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
 
       const result = await response.json();
@@ -264,7 +265,7 @@ export default function AdminPage() {
   const fetchUsers = async () => {
     try {
       const res = await fetch("/api/users", {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
       if (res.status === 401) {
         localStorage.removeItem("admin-token");
@@ -284,7 +285,7 @@ export default function AdminPage() {
       const response = await fetch(`/api/tickets/${deleteTicketId}`, {
         method: "DELETE",
         headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         }
       });
@@ -308,7 +309,7 @@ export default function AdminPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify(editFormData)
@@ -344,7 +345,7 @@ export default function AdminPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify({ assigned_to: assignee }),
@@ -383,7 +384,7 @@ export default function AdminPage() {
       const response = await fetch(`/api/tickets/${finishTicketId}/finish`, {
         method: "PATCH",
         headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         },
         body: formData,
@@ -417,7 +418,7 @@ export default function AdminPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+          
           "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify({ status: newStatus }),
@@ -492,7 +493,15 @@ export default function AdminPage() {
 
   const adminPath = (import.meta as any).env.VITE_ADMIN_PATH || "admin";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", {
+        method: "POST",
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+    } catch (e) {
+      console.error("Logout request failed:", e);
+    }
     localStorage.removeItem("admin-token");
     navigate(`/${adminPath}/login`);
   };
@@ -968,7 +977,7 @@ export default function AdminPage() {
 
                 <div className="flex gap-3 pt-2">
                   <Button variant="ghost" className="flex-1 h-12 rounded-none text-zinc-500 dark:text-zinc-400 font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800" onClick={() => setStartTicketId(null)}>{t("modal.cancel")}</Button>
-                  <Button className="flex-1 h-12 rounded-none bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-600/20" onClick={handleStartTicket} disabled={!assignedToUser}>{t("modal.confirm_start")}</Button>
+                  <Button className="flex-1 h-12 rounded-none bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-600/20" onClick={() => handleStartTicket()} disabled={!assignedToUser}>{t("modal.confirm_start")}</Button>
                 </div>
               </div>
             </motion.div>

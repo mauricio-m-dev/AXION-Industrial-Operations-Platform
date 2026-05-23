@@ -10,6 +10,34 @@ import { log } from "../utils/logger";
 // 1. CSRF PROTECTION — Custom Header + Origin Verification
 // ═══════════════════════════════════════════════════════════════════════════════
 
+export function isLocalHostOrPrivateIP(hostname: string): boolean {
+  try {
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.endsWith(".local")) {
+      return true;
+    }
+    const parts = hostname.split(".");
+    if (parts.length === 4) {
+      const first = parseInt(parts[0], 10);
+      const second = parseInt(parts[1], 10);
+      if (first === 10) return true;
+      if (first === 192 && second === 168) return true;
+      if (first === 172 && second >= 16 && second <= 31) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export function isLocalOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return isLocalHostOrPrivateIP(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 export const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
   // Ignora chamadas seguras (GET, OPTIONS, HEAD)
   if (['GET', 'OPTIONS', 'HEAD'].includes(req.method)) {
@@ -32,15 +60,17 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
       return res.status(403).json({ error: "CSRF token missing or incorrect (Origin/Referer header required)" });
     }
     
-    const allowedOrigins = process.env.CORS_ORIGINS 
-      ? process.env.CORS_ORIGINS.split(',') 
-      : [
-          'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 
-          'https://localhost', 'https://127.0.0.1', 'http://localhost',
-          'http://localhost:8080', 'https://localhost:8443'
-        ];
+    const defaultLocalOrigins = [
+      'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 
+      'https://localhost', 'https://127.0.0.1', 'http://localhost',
+      'http://localhost:8080', 'https://localhost:8443', 'http://localhost:80'
+    ];
     
-    if (origin && !allowedOrigins.includes('*') && !allowedOrigins.includes(origin)) {
+    const allowedOrigins = process.env.CORS_ORIGINS 
+      ? [...process.env.CORS_ORIGINS.split(','), ...defaultLocalOrigins] 
+      : defaultLocalOrigins;
+    
+    if (origin && !allowedOrigins.includes('*') && !allowedOrigins.includes(origin) && !isLocalOrigin(origin)) {
       return res.status(403).json({ error: `CSRF Validation Failed: Origin mismatch (${origin})` });
     }
   }
@@ -184,3 +214,38 @@ export const globalSanitizer = (req: Request, _res: Response, next: NextFunction
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const securityHeaders = helmet();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 6. ANTI-BRUTE FORCE — Redis IP Blacklist
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const checkIpBlacklist = async (req: Request, res: Response, next: NextFunction) => {
+  if (!redisClient || !redisClient.isOpen || !req.ip) return next();
+  try {
+    const isBlacklisted = await redisClient.sIsMember("ip_blacklist", req.ip);
+    if (isBlacklisted) {
+      log(`Conexão recusada do IP na blacklist: ${req.ip}`, "WARN");
+      return res.status(403).json({ error: "Acesso bloqueado por violações repetidas de segurança." });
+    }
+    next();
+  } catch (err) {
+    next();
+  }
+};
+
+export const incrementIpFailure = async (ip?: string) => {
+  if (!redisClient || !redisClient.isOpen || !ip) return;
+  try {
+    const key = `ip_fails:${ip}`;
+    const failures = await redisClient.incr(key);
+    if (failures === 1) {
+      await redisClient.expire(key, 3600); // reseta falhas em 1 hora
+    }
+    if (failures >= 4) {
+      log(`IP adicionado à Blacklist permanente (Anti-Brute Force): ${ip}`, "ERROR");
+      await redisClient.sAdd("ip_blacklist", ip);
+    }
+  } catch (err) {
+    log(`Erro no Tracker de Blacklist: ${err}`, "ERROR");
+  }
+};

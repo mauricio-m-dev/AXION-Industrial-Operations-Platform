@@ -92,9 +92,9 @@ vi.mock("../models/mongoose", () => {
         return Promise.resolve(null);
       }),
       find: vi.fn().mockReturnValue({
-        sort: vi.fn().mockResolvedValue([]),
+        sort: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
-        lean: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue([]),
         then: vi.fn().mockImplementation((cb) => cb([])),
       }),
     },
@@ -127,13 +127,13 @@ describe("Auth & Role Middleware API Tests", () => {
     });
 
     it("should reject login with non-existent matricula", async () => {
-      const res = await request(app).post("/api/login").set("X-Requested-With", "XMLHttpRequest").send({ matricula: "9999999", password: "123" });
+      const res = await request(app).post("/api/login").set("X-Requested-With", "XMLHttpRequest").send({ matricula: "9999999", password: "invalid_password" });
       expect(res.status).toBe(401);
       expect(res.body.error).toBe("Matrícula ou senha inválidos");
     });
 
     it("should reject login with incorrect password", async () => {
-      const res = await request(app).post("/api/login").set("X-Requested-With", "XMLHttpRequest").send({ matricula: "1111111", password: "wrong" });
+      const res = await request(app).post("/api/login").set("X-Requested-With", "XMLHttpRequest").send({ matricula: "1111111", password: "wrong_password" });
       expect(res.status).toBe(401);
       expect(res.body.error).toBe("Matrícula ou senha inválidos");
     });
@@ -142,8 +142,10 @@ describe("Auth & Role Middleware API Tests", () => {
       const res = await request(app).post("/api/login").set("X-Requested-With", "XMLHttpRequest").send({ matricula: "1111111", password: "correct_password" });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body).toHaveProperty("token");
-      expect(res.body).toHaveProperty("refreshToken");
+      expect(res.headers["set-cookie"]).toBeDefined();
+      const cookies = (res.headers["set-cookie"] as unknown as string[]).join("; ");
+      expect(cookies).toContain("access_token");
+      expect(cookies).toContain("refresh_token");
     });
 
     it("should reject login for locked accounts", async () => {
@@ -199,7 +201,9 @@ describe("Auth & Role Middleware API Tests", () => {
       const res = await request(app).post("/api/refresh").set("X-Requested-With", "XMLHttpRequest").send({ refreshToken: validRefreshToken });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body).toHaveProperty("token");
+      expect(res.headers["set-cookie"]).toBeDefined();
+      const cookies = (res.headers["set-cookie"] as unknown as string[]).join("; ");
+      expect(cookies).toContain("access_token");
     });
   });
 

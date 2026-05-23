@@ -6,6 +6,7 @@ import { requireAuth, requireSuperAdmin, requireAdmin } from "../middleware/auth
 import { publicLimiter } from "../middleware/security";
 import { feedbackSchema } from "../models/schemas";
 import type { AuthenticatedRequest } from "../types/express";
+import redisClient from "../config/redis";
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.post("/", publicLimiter, async (req: AuthenticatedRequest, res: Response)
     const id = uuidv4();
     await OperatorFeedback.create({ id, matricula, name, feedback });
     log(`Feedback recebido de: ${name}`);
+    try { await redisClient.del("api:feedback:list"); } catch {}
     res.json({ success: true });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -29,7 +31,17 @@ router.post("/", publicLimiter, async (req: AuthenticatedRequest, res: Response)
 
 router.get("/", requireAuth, requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const feedbacks = await OperatorFeedback.find().sort({ created_at: -1 }).lean();
+    try {
+      const cached = await redisClient.get("api:feedback:list");
+      if (cached) return res.json(JSON.parse(cached));
+    } catch {}
+
+    const feedbacks = await OperatorFeedback.find().sort({ created_at: -1 }).limit(500).lean();
+
+    try {
+      await redisClient.setEx("api:feedback:list", 60, JSON.stringify(feedbacks));
+    } catch {}
+
     res.json(feedbacks);
   } catch (error: unknown) {
     res.status(500).json({ error: "Erro ao buscar feedbacks" });

@@ -320,7 +320,7 @@ describe("Zod Schemas — Validação de Payloads Industriais", () => {
     it("deve aceitar campos opcionais (agv_number, observation, etc.)", () => {
       const result = ticketSchema.safeParse({
         type: "AGV com falha", location: "ASSEMBLY-01",
-        agv_number: "AGV-42", part_name: "Sensor Laser", observation: "Detectado ruído anormal"
+        agv_number: "42", part_name: "Sensor Laser", observation: "Detectado ruído anormal"
       });
       expect(result.success).toBe(true);
     });

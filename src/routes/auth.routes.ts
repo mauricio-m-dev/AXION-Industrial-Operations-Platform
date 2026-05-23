@@ -1,4 +1,4 @@
-import { Router, Response } from "express";
+import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
@@ -6,8 +6,10 @@ import { v4 as uuidv4 } from "uuid";
 import { User, LoginHistory } from "../models/mongoose";
 import { log } from "../utils/logger";
 import { logAudit } from "../utils/audit";
-import { loginLimiter } from "../middleware/security";
+import { loginLimiter, incrementIpFailure, isLocalHostOrPrivateIP } from "../middleware/security";
 import { loginSchema } from "../models/schemas";
+import { requireAuth, requireSuperAdmin } from "../middleware/auth";
+import redisClient from "../config/redis";
 
 /** Minimal shape of a user document for login finalization */
 interface UserDocument {
@@ -27,6 +29,7 @@ const router = Router();
 router.post("/login", loginLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
+    incrementIpFailure(req.ip);
     return res.status(400).json({ error: "Credenciais incompletas" });
   }
   const { matricula, password } = parsed.data;
@@ -74,6 +77,7 @@ router.post("/login", loginLimiter, async (req, res) => {
         }
         await user.save();
         log(`Login FAIL: ${matricula}`, "ERROR");
+        incrementIpFailure(req.ip);
         // Resposta genérica para evitar enumeração
         return res.status(401).json({ error: "Matrícula ou senha inválidos" });
       }
@@ -93,6 +97,7 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     // Se usuário não existe, resposta genérica
     log(`Login FAIL: ${matricula} (Not found)`, "ERROR");
+    incrementIpFailure(req.ip);
     return res.status(401).json({ error: "Matrícula ou senha inválidos" });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
@@ -116,7 +121,7 @@ async function finalizeLogin(user: UserDocument, ip_address: string, device: str
   const token = jwt.sign(
     { id: user.id, username: user.username, role: user.role || 'Usuário', tokenVersion },
     secret,
-    { expiresIn: "1h" }
+    { expiresIn: "15m" }
   );
 
   const refreshToken = jwt.sign(
@@ -125,24 +130,24 @@ async function finalizeLogin(user: UserDocument, ip_address: string, device: str
     { expiresIn: "7d" }
   );
 
+  const isLocalhost = res.req ? isLocalHostOrPrivateIP(res.req.hostname) : false;
+
   // Define HttpOnly Cookies na resposta para maior segurança
   res.cookie("access_token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 3600000 // 1 hora
+    secure: process.env.NODE_ENV === "production" && !isLocalhost,
+    sameSite: "lax",
+    maxAge: 15 * 60 * 1000 // 15 min
   });
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production" && !isLocalhost,
+    sameSite: "lax",
     maxAge: 7 * 24 * 3600000 // 7 dias
   });
 
   return res.json({
     success: true,
-    token,
-    refreshToken,
     user: { id: user.id, username: user.username, matricula: user.matricula, role: user.role || 'Usuário' }
   });
 }
@@ -173,19 +178,46 @@ router.post("/refresh", async (req, res) => {
     const newToken = jwt.sign(
       { id: user.id, username: user.username, role: user.role || 'Usuário', tokenVersion: user.tokenVersion || 0 },
       secret,
-      { expiresIn: "1h" }
+      { expiresIn: "15m" }
     );
 
+    const isLocalhost = isLocalHostOrPrivateIP(req.hostname);
     res.cookie("access_token", newToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 3600000
+      secure: process.env.NODE_ENV === "production" && !isLocalhost,
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000
     });
 
-    return res.json({ success: true, token: newToken });
+    return res.json({ success: true });
   } catch (error) {
+    incrementIpFailure(req.ip);
     return res.status(401).json({ error: "Refresh token inválido, adulterado ou expirado" });
+  }
+});
+
+router.post("/logout", (req, res) => {
+  res.clearCookie("access_token");
+  res.clearCookie("refresh_token");
+  return res.json({ success: true });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GESTÃO DE BLACKLIST (SUPERADMIN)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.delete("/blacklist/:ip", requireAuth, requireSuperAdmin, async (req: Request, res: Response) => {
+  const { ip } = req.params;
+  if (!redisClient || !redisClient.isOpen) {
+    return res.status(500).json({ error: "Redis indisponível" });
+  }
+  try {
+    await redisClient.sRem("ip_blacklist", ip);
+    await redisClient.del(`ip_fails:${ip}`);
+    logAudit("IP_REMOVED_FROM_BLACKLIST", (req as any).user?.username || "SuperAdmin", { targetIp: ip });
+    return res.json({ success: true, message: `IP ${ip} removido da blacklist.` });
+  } catch (error) {
+    return res.status(500).json({ error: "Erro ao remover IP da blacklist" });
   }
 });
 

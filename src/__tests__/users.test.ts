@@ -46,7 +46,8 @@ vi.mock("../models/mongoose", () => ({
       return Promise.resolve({ ...data });
     }),
     find: vi.fn().mockReturnValue({
-      sort: vi.fn().mockResolvedValue([])
+      sort: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([])
     }),
     updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 })
   },

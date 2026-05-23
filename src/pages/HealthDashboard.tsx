@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, Database, Server, Cpu, HardDrive, RefreshCw, Zap, Trash2, Power, ShieldAlert, Send, Radio, Terminal, Users, Clock, CheckCircle, AlertTriangle, FileText } from "lucide-react";
+import { Activity, Database, Server, Cpu, HardDrive, RefreshCw, Zap, Trash2, Power, ShieldAlert, Send, Radio, Terminal, Users, Clock, CheckCircle, AlertTriangle, FileText, ShieldX, Check } from "lucide-react";
 import { toast } from "sonner";
 import { triggerSafeDownload } from "../utils/sanitize";
 
@@ -42,13 +42,21 @@ export function HealthDashboard() {
   const [wipePassword, setWipePassword] = useState("");
   const [reportRange, setReportRange] = useState<"24h" | "7d" | "30d">("24h");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [blacklistedIps, setBlacklistedIps] = useState<string[]>([]);
 
   const fetchHealth = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/health");
-      const data = await response.json();
+      const [healthRes, blacklistRes] = await Promise.all([
+        fetch("/api/health"),
+        fetch("/api/apm/blacklist")
+      ]);
+      const data = await healthRes.json();
       setHealth(data);
+      if (blacklistRes.ok) {
+        const blData = await blacklistRes.json();
+        setBlacklistedIps(Array.isArray(blData) ? blData : []);
+      }
       setLastUpdated(new Date());
     } catch (error) {
       toast.error("Erro ao obter dados de saúde do sistema");
@@ -64,7 +72,7 @@ export function HealthDashboard() {
   }, []);
 
   const getHeaders = () => ({
-    "Authorization": `Bearer ${localStorage.getItem("admin-token")}`,
+    
     "Content-Type": "application/json",
     "X-Requested-With": "XMLHttpRequest"
   });
@@ -86,6 +94,27 @@ export function HealthDashboard() {
       }
     } catch (err: any) {
       toast.error("Erro de comunicação ao disparar comando APM.");
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const handlePardonIp = async (ip: string) => {
+    setActing(true);
+    try {
+      const res = await fetch(`/api/blacklist/${ip}`, {
+        method: "DELETE",
+        headers: getHeaders()
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || `IP ${ip} perdoado com sucesso.`);
+        fetchHealth();
+      } else {
+        toast.error(data.error || "Ação não autorizada.");
+      }
+    } catch (err) {
+      toast.error("Erro de comunicação ao perdoar IP.");
     } finally {
       setActing(false);
     }
@@ -127,7 +156,7 @@ export function HealthDashboard() {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin-token') || ''}`,
+          
           'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({ type: 'health', range: reportRange })
@@ -332,6 +361,49 @@ export function HealthDashboard() {
               </button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Blacklist de IP (Anti-Brute Force) */}
+      <Card className="border-none bg-zinc-900 text-white shadow-md rounded-sm overflow-hidden">
+        <CardHeader className="pb-3 border-b border-white/10 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-bold flex items-center gap-2 text-red-400">
+              <ShieldX size={18} />
+              Defesa de Perímetro (IP Blacklist)
+            </CardTitle>
+            <p className="text-xs text-zinc-400 mt-1">IPs bloqueados automaticamente pelo Anti-Brute Force (4+ falhas).</p>
+          </div>
+          <Badge variant="destructive" className="bg-red-500/20 text-red-400 border border-red-500/30">
+            {blacklistedIps.length} BLOQUEADO(S)
+          </Badge>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {blacklistedIps.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-6 text-zinc-500">
+              <CheckCircle size={32} className="text-emerald-500/50 mb-2" />
+              <p className="text-xs font-semibold">Nenhum IP na blacklist no momento.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {blacklistedIps.map(ip => (
+                <div key={ip} className="flex items-center justify-between bg-white/5 border border-white/10 p-3 rounded-sm">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">Endereço IP</span>
+                    <span className="text-sm font-mono font-bold text-zinc-200">{ip}</span>
+                  </div>
+                  <button
+                    onClick={() => handlePardonIp(ip)}
+                    disabled={acting}
+                    className="p-2 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 rounded-sm transition-colors disabled:opacity-50"
+                    title="Perdoar (Whitelist)"
+                  >
+                    <Check size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

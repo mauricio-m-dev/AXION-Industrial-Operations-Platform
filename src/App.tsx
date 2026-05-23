@@ -7,6 +7,7 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2 } from "lucide-react";
+import { ClickTracker } from "./components/ClickTracker";
 
 // Lazy Loaded Pages
 const OperatorPage = lazy(() => import("./pages/OperatorPage"));
@@ -54,6 +55,7 @@ export default function App() {
 
   return (
     <Router>
+      <ClickTracker />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Route */}

@@ -32,8 +32,27 @@ export function initSocket(server: HttpServer) {
 
     socket.on("authenticate", async (payload) => {
       try {
-        const token = payload?.token;
-        if (!token) return;
+        let token = payload?.token;
+        if (!token || token === "true") {
+          // Tenta obter dos cookies da requisição HTTP do handshake do socket
+          if (socket.request.headers.cookie) {
+            const cookies = socket.request.headers.cookie.split(";").reduce((acc: Record<string, string>, cookie: string) => {
+              const idx = cookie.indexOf("=");
+              if (idx > 0) {
+                acc[cookie.substring(0, idx).trim()] = cookie.substring(idx + 1).trim();
+              }
+              return acc;
+            }, {});
+            token = cookies["access_token"] || "";
+          }
+        }
+
+        if (!token || token === "true") {
+          log(`Socket auth failed: no valid token provided or found in cookies`, "WARN");
+          socket.disconnect();
+          return;
+        }
+
         const secret = process.env.JWT_SECRET;
         if (!secret) {
           log("JWT_SECRET is missing in .env", "ERROR");

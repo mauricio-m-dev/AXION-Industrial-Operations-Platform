@@ -13,7 +13,7 @@ import mongoose from "mongoose";
 import os from "os";
 import cluster from "cluster";
 import rateLimit from "express-rate-limit";
-import { csrfProtection, contentTypeValidation, globalSanitizer, apiLimiter } from "./middleware/security";
+import { csrfProtection, contentTypeValidation, globalSanitizer, apiLimiter, checkIpBlacklist } from "./middleware/security";
 import { log } from "./utils/logger";
 import { initSocket } from "./socket";
 import { startSystemMonitor } from "./utils/monitor";
@@ -99,6 +99,11 @@ app.use(cors({ origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split
 app.use(compression({
   level: 6,
   threshold: 10 * 1024,
+  filter: (req, res) => {
+    const type = res.getHeader('Content-Type');
+    if (type && /image|font|audio|video/.test(String(type))) return false;
+    return compression.filter(req, res);
+  },
 }));
 
 // 5. Body Parsing
@@ -110,13 +115,16 @@ app.use(contentTypeValidation);
 // 7. Global Input Sanitization — Anti-XSS recursivo em todo req.body
 app.use(globalSanitizer);
 
-// 8. API Rate Limiting Global — 200 req/min por IP (Redis-backed)
+// 8. Blacklist de IP via Redis (Executar antes do Rate Limit Global para poupar recursos)
+app.use(checkIpBlacklist);
+
+// 9. API Rate Limiting Global — 200 req/min por IP (Redis-backed)
 app.use('/api', apiLimiter);
 
-// 9. APM Telemetry
+// 10. APM Telemetry
 app.use(apmMiddleware);
 
-// 10. CSRF Protection
+// 11. CSRF Protection
 app.use(csrfProtection);
 
 // Routes
@@ -184,7 +192,7 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { maxAge: '1y', immutable: true }));
     // snyk-disable-next-line NoRateLimitingForExpensiveWebOperation
     app.get(/.*/, localLimiter, apiLimiter, (req, res) => res.sendFile(path.join(distPath, "index.html")));
   }

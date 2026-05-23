@@ -34,7 +34,7 @@ export function FeedbackTab() {
   const fetchFeedbacks = async () => {
     try {
       const res = await fetch("/api/feedback", {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
       if (res.status === 401) {
         localStorage.removeItem("admin-token");

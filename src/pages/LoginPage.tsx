@@ -55,15 +55,14 @@ export default function LoginPage() {
 
       if (response.ok && data.success) {
         if (data.user?.role === "Usuário") {
-          sessionStorage.setItem("operator-token", data.token);
           sessionStorage.setItem("operator-data", JSON.stringify({ name: data.user.username, matricula: data.user.matricula }));
           toast.success(t("login.redirect"));
           navigate("/chamado");
         } else {
-          localStorage.setItem("admin-token", data.token);
           localStorage.setItem("admin-role", data.user.role);
           localStorage.setItem("admin-username", data.user.username);
           localStorage.setItem("admin-matricula", data.user.matricula);
+          localStorage.setItem("admin-token", "true");
           toast.success("Acesso autorizado");
           navigate(`/${adminPath}`);
         }

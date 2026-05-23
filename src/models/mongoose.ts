@@ -121,10 +121,15 @@ export const ApmReportSchema = new Schema({
   created_at: { type: Date, default: Date.now }
 });
 
+UserSchema.index({ username: 1 });
+
 export const User = mongoose.model("User", UserSchema);
 export const Ticket = mongoose.model("Ticket", TicketSchema);
 export const AuditLog = mongoose.model("AuditLog", AuditLogSchema);
+LoginHistorySchema.index({ timestamp: -1 });
 export const LoginHistory = mongoose.model("LoginHistory", LoginHistorySchema);
+OperatorFeedbackSchema.index({ created_at: -1 });
 export const OperatorFeedback = mongoose.model("OperatorFeedback", OperatorFeedbackSchema);
 export const ApmMetric = mongoose.model("ApmMetric", ApmMetricSchema);
+ApmReportSchema.index({ created_at: -1 });
 export const ApmReport = mongoose.model("ApmReport", ApmReportSchema);

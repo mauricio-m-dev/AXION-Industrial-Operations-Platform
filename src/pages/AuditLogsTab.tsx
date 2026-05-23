@@ -34,7 +34,7 @@ export function AuditLogsTab() {
   const fetchLogs = async () => {
     try {
       const response = await fetch("/api/logs", {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("admin-token")}` }
+        headers: { }
       });
       if (response.status === 401) {
         localStorage.removeItem("admin-token");
@@ -65,6 +65,7 @@ export function AuditLogsTab() {
       case "START_SERVICE": return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-none px-2 py-0">{t("audit.badge.start")}</Badge>;
       case "FINISH_SERVICE": return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0">{t("audit.badge.finish")}</Badge>;
       case "CHANGE_STATUS": return <Badge className="bg-zinc-200 text-zinc-700 hover:bg-zinc-200 border-none px-2 py-0">{t("audit.badge.status")}</Badge>;
+      case "UI_CLICK": return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none px-2 py-0">UI Click</Badge>;
       default: return <Badge variant="outline">{action}</Badge>;
     }
   };

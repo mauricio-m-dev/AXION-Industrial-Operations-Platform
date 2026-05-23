@@ -64,6 +64,7 @@ vi.mock("../models/mongoose", () => ({
     create: vi.fn().mockResolvedValue({ id: "FB-001", matricula: "1234567", name: "João", feedback: "Ótimo!" }),
     find: vi.fn().mockReturnValue({
       sort: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
       lean: vi.fn().mockResolvedValue([
         { id: "FB-001", name: "João", feedback: "Ótimo!", created_at: new Date() }
       ])
@@ -104,7 +105,8 @@ vi.mock("../models/mongoose", () => ({
   },
   ApmReport: {
     find: vi.fn().mockReturnValue({
-      sort: vi.fn().mockResolvedValue([])
+      sort: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue([])
     }),
     create: vi.fn().mockResolvedValue({ id: "REP-001", title: "Test Report" })
   }

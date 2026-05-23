@@ -11,8 +11,10 @@ RUN npm config set fetch-retry-maxtimeout 120000 \
     && npm config set maxsockets 5 \
     && npm install --no-audit --no-fund
 
-# Copiar código-fonte
+# Force builder cache invalidation
+RUN echo "Rebuilding code..."
 COPY . .
+
 
 # Argumentos de Build para Vite
 ARG VITE_ADMIN_PATH
@@ -42,8 +44,9 @@ RUN for i in 1 2 3 4 5; do apk add --no-cache texlive && break || (echo "Retry t
 RUN for i in 1 2 3 4 5; do apk add --no-cache texlive-xetex && break || (echo "Retry texlive-xetex..." && sleep 10); done
 RUN for i in 1 2 3 4 5; do apk add --no-cache texmf-dist-latexextra && break || (echo "Retry texmf-dist-latexextra..." && sleep 10); done
 
-# Criar diretório de uploads e ajustar permissões
-RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
+# Criar diretório de uploads e ajustar permissões (invalidar cache de cópia)
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads && echo "invalidate-runner-cache-1"
+
 
 # Copiar os arquivos transpilados do backend e o dist do frontend
 COPY --from=builder /app/src ./src

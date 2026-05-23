@@ -24,7 +24,10 @@ export function SecurityTab() {
     try {
       const response = await fetch("/api/mfa/setup", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "Authorization": `Bearer ${token}`
+        }
       });
       const data = await response.json();
       if (response.ok && data.success) {
@@ -41,13 +44,19 @@ export function SecurityTab() {
 
   const handleVerify = async () => {
     if (mfaCode.length < 6) return;
+    const token = localStorage.getItem("admin-token");
+    if (!token) {
+      toast.error("Sessão expirada. Por favor, faça login novamente.");
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch("/api/mfa/enable", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("admin-token")}` 
+          "X-Requested-With": "XMLHttpRequest",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ token: mfaCode })
       });

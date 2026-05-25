@@ -13,6 +13,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { toast } from "sonner";
 import { WeeklyReportPDFTemplate } from "../components/admin/WeeklyReportPDFTemplate";
+import TicketDetailModal from "../components/admin/modals/TicketDetailModal";
 
 interface Ticket {
   id: string;
@@ -54,6 +55,7 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const itemsPerPage = 5;
   const { t, language } = useLanguage();
   const { theme } = useTheme();
@@ -547,7 +549,11 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
                 return (
                   <>
                     {paginatedTickets.map((ticket) => (
-                      <TableRow key={ticket.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 border-zinc-100 dark:border-zinc-800">
+                      <TableRow 
+                        key={ticket.id} 
+                        className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 border-zinc-100 dark:border-zinc-800 cursor-pointer"
+                        onClick={() => setSelectedTicket(ticket)}
+                      >
                         <TableCell className="pl-6 py-4">
                           <span className="font-mono font-bold text-[#DC2626] dark:text-red-400 text-xs md:text-sm">{ticket.id}</span>
                         </TableCell>
@@ -622,6 +628,22 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
         reportPeriod={reportPeriod}
         startDate={startDate}
         endDate={endDate}
+        t={t}
+      />
+
+      {/* Ticket Detail Modal for Table */}
+      <TicketDetailModal
+        selectedTicket={selectedTicket}
+        setSelectedTicket={setSelectedTicket}
+        userRole="Viewer" // Read-only role for the report view
+        t={t}
+        setEditTicketId={() => {}}
+        setEditFormData={() => {}}
+        setDeleteTicketId={() => {}}
+        updateStatus={() => {}}
+        setStartTicketId={() => {}}
+        handleStartTicket={() => {}}
+        setFinishTicketId={() => {}}
       />
     </div>
   );

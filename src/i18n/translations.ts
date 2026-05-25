@@ -210,6 +210,10 @@ export const translations = {
     "modal.delete_warn": "Esta ação não pode ser desfeita.",
     "modal.confirm_delete": "Sim, Excluir",
     "modal.edit_title": "Editar Chamado",
+    "modal.edit_desc": "Modifique as informações operacionais deste registro",
+    "modal.type": "Categoria",
+    "modal.priority": "Prioridade",
+    "modal.delete_confirm_text": "A exclusão de um chamado removerá permanentemente o histórico de atendimento. Tem certeza que deseja prosseguir?",
     "modal.save": "Salvar",
 
     // Statuses
@@ -623,6 +627,10 @@ export const translations = {
     "modal.delete_warn": "此操作无法撤消。",
     "modal.confirm_delete": "确认删除",
     "modal.edit_title": "编辑工单",
+    "modal.edit_desc": "修改此记录的操作信息",
+    "modal.type": "类别",
+    "modal.priority": "优先",
+    "modal.delete_confirm_text": "删除工单将永久删除服务历史记录。您确定要继续吗？",
     "modal.save": "保存",
 
     // Statuses
@@ -1033,6 +1041,10 @@ export const translations = {
     "modal.delete_warn": "This action cannot be undone.",
     "modal.confirm_delete": "Yes, Delete",
     "modal.edit_title": "Edit Ticket",
+    "modal.edit_desc": "Modify the operational information of this record",
+    "modal.type": "Category",
+    "modal.priority": "Priority",
+    "modal.delete_confirm_text": "Deleting a ticket will permanently remove the service history. Are you sure you want to proceed?",
     "modal.save": "Save",
 
     // Statuses

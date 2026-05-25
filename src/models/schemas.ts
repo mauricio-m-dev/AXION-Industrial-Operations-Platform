@@ -30,6 +30,19 @@ export const ticketSchema = z.object({
   downtime: z.string().optional(),
 });
 
+export const ticketUpdateSchema = z.object({
+  type: z.string().min(1).optional(),
+  location: z.string().min(1).optional(),
+  priority: z.enum(['Baixo', 'Médio', 'Alto', 'Crítico']).optional(),
+  operational_impact: z.string().optional(),
+  downtime: z.string().optional(),
+  observation: z.string().optional(),
+});
+
+export const ticketStatusSchema = z.object({
+  status: z.enum(['Aberto', 'Em atendimento', 'Finalizado']),
+});
+
 export const feedbackSchema = z.object({
   matricula: z.string().length(7, "A matrícula deve ter exatamente 7 dígitos").regex(/^\d+$/, "A matrícula deve conter apenas números"),
   name: z.string().min(1),

@@ -8,7 +8,7 @@ export const UserSchema = new Schema({
   id: { type: String, required: true, unique: true },
   username: { type: String, required: true },
   matricula: { type: String, required: true, unique: true },
-  password: { type: String, required: true, get: decrypt, set: encrypt },
+  password: { type: String, required: true },
   role: { type: String, default: "Usuário" },
   failedLoginAttempts: { type: Number, default: 0 },
   lockoutUntil: { type: Date },

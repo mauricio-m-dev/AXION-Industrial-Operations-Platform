@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 
 interface Ticket {
   id: string;
@@ -24,135 +25,269 @@ interface WeeklyReportPDFTemplateProps {
   stats: Stats;
   filteredTickets: Ticket[];
   getTranzincdType: (type: string) => string;
+  reportPeriod: string;
+  startDate: string;
+  endDate: string;
 }
 
 export const WeeklyReportPDFTemplate: React.FC<WeeklyReportPDFTemplateProps> = ({
   stats,
   filteredTickets,
   getTranzincdType,
+  reportPeriod,
+  startDate,
+  endDate,
 }) => {
-  return (
-    <div id="professional-report-container" style={{ display: 'none', background: 'white', color: 'black', padding: '40px', width: '800px', fontFamily: 'sans-serif' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '4px solid #1e3a8a', paddingBottom: '20px', marginBottom: '30px' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '28px', color: '#1e3a8a', fontWeight: 800 }}>AXION TECHNOLOGY</h1>
-          <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>ENTERPRISE OPERATIONS PLATFORM</p>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700 }}>Relatório Executivo Operacional</p>
-          <p style={{ margin: '3px 0 0 0', fontSize: '10px', color: '#64748b' }}>{new Date().toLocaleString()}</p>
-        </div>
-      </div>
+  // Dados do usuário logado dinâmicos
+  const username = localStorage.getItem("admin-username") || "Técnico Operacional";
+  const matricula = localStorage.getItem("admin-matricula") || "---";
 
-      {/* Executive Summary */}
-      <div style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '16px', borderLeft: '4px solid #DC2626', paddingLeft: '10px', marginBottom: '20px', color: '#18181b' }}>1. RESUMO EXECUTIVO</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
-          <div style={{ padding: '15px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <p style={{ margin: 0, fontSize: '10px', color: '#64748b', fontWeight: 700 }}>TOTAL DE OCORRÊNCIAS</p>
-            <p style={{ margin: '5px 0 0 0', fontSize: '20px', fontWeight: 800 }}>{stats.total}</p>
-          </div>
-          <div style={{ padding: '15px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <p style={{ margin: 0, fontSize: '10px', color: '#64748b', fontWeight: 700 }}>EFICIÊNCIA OPERACIONAL</p>
-            <p style={{ margin: '5px 0 0 0', fontSize: '20px', fontWeight: 800, color: '#10b981' }}>{stats.efficiency}%</p>
-          </div>
-          <div style={{ padding: '15px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <p style={{ margin: 0, fontSize: '10px', color: '#64748b', fontWeight: 700 }}>DISPONIBILIDADE</p>
-            <p style={{ margin: '5px 0 0 0', fontSize: '20px', fontWeight: 800, color: '#ef4444' }}>{stats.availability}%</p>
-          </div>
-          <div style={{ padding: '15px', background: '#fef2f2', borderRadius: '10px', border: '1px solid #fee2e2' }}>
-            <p style={{ margin: 0, fontSize: '10px', color: '#ef4444', fontWeight: 700 }}>CHAMADOS CRÍTICOS</p>
-            <p style={{ margin: '5px 0 0 0', fontSize: '20px', fontWeight: 800, color: '#b91c1c' }}>{stats.criticalFailures}</p>
-          </div>
+  // Formatação amigável do período analisado
+  const getPeriodLabel = () => {
+    if (reportPeriod === "last7") return "Últimos 7 dias";
+    if (reportPeriod === "thisWeek") return "Esta Semana";
+    if (reportPeriod === "lastWeek") return "Semana Passada";
+    if (reportPeriod === "custom") {
+      const startStr = startDate ? new Date(startDate + "T00:00:00").toLocaleDateString('pt-BR') : "N/A";
+      const endStr = endDate ? new Date(endDate + "T00:00:00").toLocaleDateString('pt-BR') : "N/A";
+      return `${startStr} a ${endStr}`;
+    }
+    return "Período Personalizado";
+  };
+  const periodLabel = getPeriodLabel();
+
+  return createPortal(
+    <div id="professional-report-container" className="hidden print:block relatorio-padrao print-only-abnt">
+      
+      {/* 1. Capa ABNT */}
+      <div className="report-cover">
+        <div className="cover-header">
+          <p className="abnt-logo-text">AXION TECHNOLOGY</p>
+          <p className="abnt-department">Manutenção & Operações Industriais</p>
         </div>
-      </div>
 
-      {/* KPI Analysis */}
-      <div style={{ marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '16px', borderLeft: '4px solid #DC2626', paddingLeft: '10px', marginBottom: '20px', color: '#18181b' }}>2. INDICADORES DE PERFORMANCE (KPIs)</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
-              <th style={{ padding: '12px', fontSize: '11px', color: '#475569' }}>INDICADOR</th>
-              <th style={{ padding: '12px', fontSize: '11px', color: '#475569' }}>VALOR MÉDIO</th>
-              <th style={{ padding: '12px', fontSize: '11px', color: '#475569' }}>STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-              <td style={{ padding: '12px', fontSize: '12px', fontWeight: 600 }}>MTTR (Tempo Médio de Reparo)</td>
-              <td style={{ padding: '12px', fontSize: '12px' }}>{stats.avgResolution} minutos</td>
-              <td style={{ padding: '12px', fontSize: '11px', color: stats.avgResolution < 30 ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                {stats.avgResolution < 30 ? 'DENTRO DA META' : 'ACIMA DO SLA'}
-              </td>
-            </tr>
-            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-              <td style={{ padding: '12px', fontSize: '12px', fontWeight: 600 }}>MTBF (Tempo Médio Entre Falhas)</td>
-              <td style={{ padding: '12px', fontSize: '12px' }}>{stats.mtbf} minutos</td>
-              <td style={{ padding: '12px', fontSize: '11px', color: '#ef4444', fontWeight: 700 }}>ESTÁVEL</td>
-            </tr>
-            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-              <td style={{ padding: '12px', fontSize: '12px', fontWeight: 600 }}>Tempo Médio de Resposta</td>
-              <td style={{ padding: '12px', fontSize: '12px' }}>{stats.avgResponse} minutos</td>
-              <td style={{ padding: '12px', fontSize: '11px', color: '#10b981', fontWeight: 700 }}>EXCELENTE</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div className="cover-middle">
+          <h1 className="cover-title">Relatório de Resultados: Performance Operacional</h1>
+          <div className="cover-divider"></div>
+          <p className="cover-subtitle">Relatório de Operação</p>
+        </div>
 
-      {/* Intelligence Analysis */}
-      <div style={{ marginBottom: '40px', background: '#eff6ff', padding: '25px', borderRadius: '15px', border: '1px solid #dbeafe' }}>
-        <h2 style={{ fontSize: '16px', color: '#1e40af', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          ANÁLISE INTELIGENTE AXION
-        </h2>
-        <div style={{ fontSize: '13px', lineHeight: '1.6', color: '#1e3a8a' }}>
-          <p><strong>Diagnóstico Operacional:</strong> O sistema identificou que a categoria <strong>{stats.topCategory}</strong> é o principal gargalo no período, representando o maior volume de chamados.</p>
-          <p style={{ marginTop: '10px' }}><strong>Recomendações:</strong></p>
-          <ul style={{ paddingLeft: '20px' }}>
-            <li>Verificar manutenção preventiva nos equipamentos: <strong>{stats.topEquipments}</strong>.</li>
-            <li>Treinamento de reforço para operadores com alto volume de abertura de chamados duplicados.</li>
-            <li>Ajustar o estoque de peças críticas para reduzir o tempo de finalização (MTTR).</li>
-          </ul>
+        <div className="cover-metadata">
+          <p><strong>Período Analisado:</strong> {periodLabel}</p>
+          <p><strong>Setor/Área:</strong> Manutenção Geral (AGV / Downtime)</p>
+          <p><strong>Responsável Técnico:</strong> {username} (Mtr: {matricula})</p>
+          <p><strong>Data de Emissão:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
+        </div>
+
+        <div className="cover-footer">
+          <p>CLASSIFICAÇÃO: USO INTERNO - CONFIDENCIAL</p>
         </div>
       </div>
 
-      {/* Detailed History */}
-      <div style={{ pageBreakBefore: 'always' }}>
-        <h2 style={{ fontSize: '16px', borderLeft: '4px solid #DC2626', paddingLeft: '10px', marginBottom: '20px', color: '#18181b' }}>3. HISTÓRICO DETALHADO DE OCORRÊNCIAS</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-          <thead>
-            <tr style={{ background: '#09090b', color: 'white', textAlign: 'left' }}>
-              <th style={{ padding: '10px' }}>PROTOCOLO</th>
-              <th style={{ padding: '10px' }}>CATEGORIA</th>
-              <th style={{ padding: '10px' }}>LOCALIZAÇÃO</th>
-              <th style={{ padding: '10px' }}>DATA/HORA</th>
-              <th style={{ padding: '10px' }}>STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTickets.slice(0, 50).map(t => (
-              <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '8px', fontWeight: 700, color: '#DC2626' }}>{t.id}</td>
-                <td style={{ padding: '8px' }}>{getTranzincdType(t.type)}</td>
-                <td style={{ padding: '8px' }}>{t.location}</td>
-                <td style={{ padding: '8px' }}>{new Date(t.created_at).toLocaleString()}</td>
-                <td style={{ padding: '8px', fontWeight: 700 }}>{t.status.toUpperCase()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {filteredTickets.length > 50 && (
-          <p style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', marginTop: '10px' }}>
-            Exibindo as 50 ocorrências mais recentes. Para lista completa, consulte a exportação CSV.
-          </p>
-        )}
+      {/* 2. Sumário ABNT */}
+      <div className="abnt-sumario">
+        <h2 className="sumario-title">Sumário</h2>
+        
+        <div className="sumario-row">
+          <div>
+            <span className="sumario-section-num">1</span>
+            <span className="sumario-section-title">OBJETIVO</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>02</div>
+        </div>
+
+        <div className="sumario-row">
+          <div>
+            <span className="sumario-section-num">2</span>
+            <span className="sumario-section-title">METODOLOGIA / DADOS BASE</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>02</div>
+        </div>
+
+        <div className="sumario-row">
+          <div>
+            <span className="sumario-section-num">3</span>
+            <span className="sumario-section-title">ANÁLISE / RESULTADOS</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>02</div>
+        </div>
+
+        <div className="sumario-row" style={{ paddingLeft: '15px' }}>
+          <div>
+            <span className="sumario-section-num">3.1</span>
+            <span>Resumo Operacional</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>02</div>
+        </div>
+
+        <div className="sumario-row" style={{ paddingLeft: '15px' }}>
+          <div>
+            <span className="sumario-section-num">3.2</span>
+            <span>Indicadores Chave de Desempenho (KPIs)</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>02</div>
+        </div>
+
+        <div className="sumario-row" style={{ paddingLeft: '15px' }}>
+          <div>
+            <span className="sumario-section-num">3.3</span>
+            <span>Análise de Categoria Principal</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>02</div>
+        </div>
+
+        <div className="sumario-row" style={{ paddingLeft: '15px' }}>
+          <div>
+            <span className="sumario-section-num">3.4</span>
+            <span>Registro Cronológico (Amostragem)</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>03</div>
+        </div>
+
+        <div className="sumario-row">
+          <div>
+            <span className="sumario-section-num">4</span>
+            <span className="sumario-section-title">CONCLUSÃO / CONSIDERAÇÕES FINAIS</span>
+          </div>
+          <div className="sumario-dots"></div>
+          <div>03</div>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ marginTop: '50px', borderTop: '1px solid #e2e8f0', paddingTop: '20px', textAlign: 'center' }}>
-        <p style={{ fontSize: '10px', color: '#94a3b8' }}>AXION TECHNOLOGY - DOCUMENTO CONFIDENCIAL E PRIVADO</p>
+      {/* 3. Corpo do Relatório */}
+      <h2 className="abnt-section">1 Objetivo</h2>
+      <p className="abnt-paragraph">
+        O presente relatório operacional tem por objetivo formalizar o fluxo de chamados de manutenção e acompanhamento de incidentes industriais no chão de fábrica da planta. O propósito estratégico consiste na identificação de gargalos de atendimento e no cálculo exato de tempos de indisponibilidade (Downtime) para direcionar as tomadas de decisões de engenharia e otimização do tempo médio de reparo.
+      </p>
+
+      <h2 className="abnt-section">2 Metodologia / Dados Base</h2>
+      <p className="abnt-paragraph">
+        Os dados e indicadores base que sustentam este documento foram gerados e capturados de forma automatizada por intermédio das APIs e do banco de dados histórico da plataforma AXION. A amostragem compreende o período operacional de <strong>{periodLabel}</strong>, considerando todas as ocorrências de movimentação, AGVs, falhas eletrônicas e mecânicas registradas e encerradas na base do sistema.
+      </p>
+
+      <h2 className="abnt-section">3 Análise / Resultados</h2>
+      <p className="abnt-paragraph">
+        Abaixo estão detalhados os resultados quantitativos de performance do chão de fábrica obtidos no período analisado, estruturados a partir das métricas gerais, dos tempos operacionais de resposta e das falhas mais recorrentes.
+      </p>
+
+      <h3 className="abnt-subsection">3.1 Resumo Operacional</h3>
+      <table className="abnt-table">
+        <thead>
+          <tr>
+            <th>Métrica Operacional</th>
+            <th className="text-right">Valor Consolidado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Total de Chamados Registrados</td>
+            <td className="text-right">{stats.total}</td>
+          </tr>
+          <tr>
+            <td>Taxa de Eficiência de Atendimento (Encerramentos rápidos)</td>
+            <td className="text-right">{stats.efficiency}%</td>
+          </tr>
+          <tr>
+            <td>Disponibilidade Média Estimada da Linha</td>
+            <td className="text-right">{stats.availability}%</td>
+          </tr>
+          <tr>
+            <td>Quantidade de Ocorrências Críticas (Parada de Linha)</td>
+            <td className="text-right">{stats.criticalFailures}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 className="abnt-subsection">3.2 Indicadores Chave de Desempenho (KPIs)</h3>
+      <table className="abnt-table">
+        <thead>
+          <tr>
+            <th>Indicador Técnico</th>
+            <th className="text-right">Tempo Médio Registrado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tempo Médio de Reparo (MTTR)</td>
+            <td className="text-right">{stats.avgResolution} min</td>
+          </tr>
+          <tr>
+            <td>Tempo Médio Entre Falhas (MTBF)</td>
+            <td className="text-right">{stats.mtbf} min</td>
+          </tr>
+          <tr>
+            <td>Tempo Médio de Resposta / Primeiro Contato (FRT)</td>
+            <td className="text-right">{stats.avgResponse} min</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 className="abnt-subsection">3.3 Análise de Categoria Principal</h3>
+      <p className="abnt-paragraph">
+        O diagnóstico automatizado indicou que a categoria de incidente com maior representatividade no período foi <strong>{stats.topCategory || "N/A"}</strong>. Os equipamentos e ativos industriais que apresentaram o maior índice de reincidência de falha e necessitam de inspeção imediata são: <strong>{stats.topEquipments || "Nenhum ativo crítico registrado"}</strong>. Recomenda-se o reabastecimento preventivo de inventário e alocação de técnicos dedicados às áreas físicas destes ativos para redução de gargalos de suporte.
+      </p>
+
+      <div className="page-break"></div>
+
+      <h3 className="abnt-subsection">3.4 Registro Cronológico (Amostragem de Chamados)</h3>
+      <p className="abnt-paragraph">
+        Mapeamento cronológico dos últimos registros de incidentes abertos sob o período de auditoria atual:
+      </p>
+      <table className="abnt-table">
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Categoria</th>
+            <th>Localização</th>
+            <th>Data/Hora Abertura</th>
+            <th>Status do Chamado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredTickets.slice(0, 20).map(t => (
+            <tr key={t.id}>
+              <td>{t.id.substring(0, 8)}</td>
+              <td>{getTranzincdType(t.type)}</td>
+              <td>{t.location || '---'}</td>
+              <td>{new Date(t.created_at).toLocaleString('pt-BR')}</td>
+              <td>{t.status}</td>
+            </tr>
+          ))}
+          {filteredTickets.length === 0 && (
+            <tr>
+              <td colSpan={5} className="text-center">Nenhum registro encontrado no período.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      
+      {filteredTickets.length > 20 && (
+        <p style={{ fontSize: '10pt', textAlign: 'center', marginTop: '10pt', color: '#666' }}>
+          * Exibindo apenas os 20 registros mais recentes. Outros {filteredTickets.length - 20} registros foram omitidos para preservação de espaço físico.
+        </p>
+      )}
+
+      <h2 className="abnt-section">4 Conclusão / Considerações Finais</h2>
+      <p className="abnt-paragraph">
+        Com base no tempo médio de reparo (MTTR) consolidado de <strong>{stats.avgResolution} minutos</strong>, a performance das equipes de manutenção encontra-se em níveis aceitáveis, embora a categoria <strong>{stats.topCategory || "N/A"}</strong> represente um desvio relevante no tempo de operação contínua. Para a próxima janela operacional, sugere-se a aplicação das inspeções preventivas recomendadas nos ativos <strong>{stats.topEquipments || "recorrentes"}</strong> para restabelecer a estabilidade e atingir as metas de disponibilidade de linha estimadas.
+      </p>
+
+      <br /><br /><br />
+      <div style={{ textAlign: 'center', marginTop: '45pt', pageBreakInside: 'avoid' }}>
+        <hr style={{ width: '6cm', border: 'none', borderTop: '1px solid black', margin: '0 auto 10pt auto' }} />
+        <p style={{ fontSize: '10pt', margin: 0, fontWeight: 'bold' }}>{username}</p>
+        <p style={{ fontSize: '9pt', margin: 0 }}>Responsável Técnico de Operações</p>
+        <p style={{ fontSize: '9pt', margin: 0 }}>Axion Industrial Platform</p>
       </div>
-    </div>
+
+    </div>,
+    document.body
   );
 };

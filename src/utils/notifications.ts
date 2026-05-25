@@ -88,7 +88,8 @@ export async function sendWhatsAppMessage(phone: string, message: string) {
           destinations: [{ to: cleanPhone }],
           text: message
         }]
-      })
+      }),
+      signal: AbortSignal.timeout(10000)
     });
 
     if (!response.ok) {
@@ -355,22 +356,26 @@ async function dispatchNotifications(
   emailSubject: string,
   emailHtml: string
 ): Promise<void> {
+  const promises: Promise<void>[] = [];
+
   for (const user of targetUsers) {
     const personalizedWhatsapp = whatsappMessage.replace(/\{\{USER_NAME\}\}/g, user.username);
     const personalizedEmail = emailHtml.replace(/\{\{USER_NAME\}\}/g, user.username);
 
     // WhatsApp — envia para TODOS os usuários que têm número cadastrado
     if (user.whatsapp && user.whatsapp.trim() !== "") {
-      await sendWhatsAppMessage(user.whatsapp, personalizedWhatsapp);
+      promises.push(sendWhatsAppMessage(user.whatsapp, personalizedWhatsapp));
     } else {
       log(`Usuário ${user.username}: WhatsApp não cadastrado, enviando apenas por e-mail.`, "WARN");
     }
 
     // Email — envia para TODOS os usuários que têm email cadastrado
     if (user.email && user.email.trim() !== "") {
-      await sendEmailMessage(user.email, emailSubject, personalizedEmail);
+      promises.push(sendEmailMessage(user.email, emailSubject, personalizedEmail));
     } else {
       log(`Usuário ${user.username}: E-mail não cadastrado, enviando apenas por WhatsApp.`, "WARN");
     }
   }
+
+  await Promise.allSettled(promises);
 }

@@ -253,41 +253,13 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
     triggerSafeDownload(blob, `axion_performance_${new Date().toISOString().split('T')[0]}.csv`);
   };
  
-  const generatePDFReport = async () => {
-    toast.loading("Compilando relatório LaTeX profissional...", { id: "latex-gen" });
+  const generatePDFReport = () => {
+    toast.success("Preparando documento para impressão ABNT...", { id: "print-gen" });
     
-    try {
-      const response = await fetch('/api/apm/reports/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({
-          type: 'operational',
-          period: reportPeriod,
-          start: startDate,
-          end: endDate
-        })
-      });
-
-      if (!response.ok) throw new Error("Falha na geração do PDF.");
-
-      const blob = await response.blob();
-      // deepcode ignore DOMXSS: blob URL from URL.createObjectURL is browser-controlled and cannot execute JS
-      triggerSafeDownload(blob, `relatorio_axion_${new Date().toISOString().split('T')[0]}.pdf`);
-      
-      toast.success("Relatório (PDF) gerado com qualidade industrial.", { id: "latex-gen" });
-    } catch (err: any) {
-      console.warn("Failed to generate PDF, falling back to print:", err.message);
-      toast.error("Servidor indisponível. Usando impressão nativa de alta fidelidade...", { id: "latex-gen" });
-      const element = document.getElementById('professional-report-container');
-      if (!element) return;
-      element.style.display = 'block';
+    // Pequeno timeout para garantir renderização
+    setTimeout(() => {
       globalThis.print();
-      element.style.display = 'none';
-    }
+    }, 500);
   };
 
 
@@ -643,7 +615,14 @@ export function WeeklyReportTab({ tickets, getStatusBadge, nav }: Readonly<Weekl
         )}
       </Card>
 
-      <WeeklyReportPDFTemplate stats={stats} filteredTickets={filteredTickets} getTranzincdType={getTranzincdType} />
+      <WeeklyReportPDFTemplate 
+        stats={stats} 
+        filteredTickets={filteredTickets} 
+        getTranzincdType={getTranzincdType}
+        reportPeriod={reportPeriod}
+        startDate={startDate}
+        endDate={endDate}
+      />
     </div>
   );
 }

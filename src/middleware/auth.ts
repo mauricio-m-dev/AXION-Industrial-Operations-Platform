@@ -4,6 +4,7 @@ import { User } from "../models/mongoose";
 import { logAudit } from "../utils/audit";
 import { incrementIpFailure } from "./security";
 import type { AuthUser } from "../types/express";
+import redisClient from "../config/redis";
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   let token = "";
@@ -35,13 +36,34 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const JWT_SECRET = process.env.JWT_SECRET!;
     // Proteção contra JWT tampering e Algorithm Confusion
     const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as Record<string, unknown>;
+    const username = String(decoded.username);
     
-    // Consulta à verdade absoluta do banco de dados (Server-Side verification)
-    const userDoc = await User.findOne({ username: decoded.username });
+    // Check cache first
+    const cacheKey = `user:auth:${username}`;
+    let userDoc: any = null;
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) userDoc = JSON.parse(cached);
+    } catch (e) {
+      // ignore redis errors and fall back to DB
+    }
+
     if (!userDoc) {
-      logAudit("AUTH_REVOKED", String(decoded.username), { reason: "User account not found in database" });
-      incrementIpFailure(req.ip);
-      return res.status(401).json({ error: "Conta de usuário inexistente ou desativada" });
+      // Consulta à verdade absoluta do banco de dados (Server-Side verification)
+            const dbUserQuery = User.findOne({ username });
+      const dbUser = typeof (dbUserQuery as any).lean === "function" ? await (dbUserQuery as any).lean() : await dbUserQuery;
+      if (!dbUser) {
+        logAudit("AUTH_REVOKED", username, { reason: "User account not found in database" });
+        incrementIpFailure(req.ip);
+        return res.status(401).json({ error: "Conta de usuário inexistente ou desativada" });
+      }
+      userDoc = dbUser;
+      
+      try {
+        await redisClient.setEx(cacheKey, 60, JSON.stringify(userDoc));
+      } catch (e) {
+        // ignore redis errors
+      }
     }
 
     // Proteção com tokenVersion para invalidação imediata de sessões

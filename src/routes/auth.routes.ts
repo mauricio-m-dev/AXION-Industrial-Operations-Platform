@@ -42,7 +42,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     if (user) {
       // 1. Verificação de Bloqueio Progressivo
       const now = new Date();
-      if (user.lockoutUntil && user.lockoutUntil > now) {
+      if (user.lockoutUntil && user.lockoutUntil > now && user.role !== 'SuperAdmin') {
         const remaining = Math.ceil((user.lockoutUntil.getTime() - now.getTime()) / 60000);
         const tempo = remaining > 100000 ? "permanentemente" : `por ${remaining} minutos`;
         return res.status(401).json({ error: `Conta bloqueada ${tempo} devido a múltiplas tentativas falhas.` });
@@ -67,15 +67,17 @@ router.post("/login", loginLimiter, async (req, res) => {
 
       if (!passwordMatch) {
         // Incrementa falhas e aplica bloqueio se necessário
-        user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-        if (user.failedLoginAttempts >= 50) {
-          user.lockoutUntil = new Date(now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000); // Permanente (100 anos)
-        } else if (user.failedLoginAttempts >= 15) {
-          user.lockoutUntil = new Date(now.getTime() + 60 * 60 * 1000); // 1 hora
-        } else if (user.failedLoginAttempts >= 5) {
-          user.lockoutUntil = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutos
+        if (user.role !== 'SuperAdmin') {
+          user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+          if (user.failedLoginAttempts >= 50) {
+            user.lockoutUntil = new Date(now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000); // Permanente (100 anos)
+          } else if (user.failedLoginAttempts >= 15) {
+            user.lockoutUntil = new Date(now.getTime() + 60 * 60 * 1000); // 1 hora
+          } else if (user.failedLoginAttempts >= 5) {
+            user.lockoutUntil = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutos
+          }
+          await user.save();
         }
-        await user.save();
         log(`Login FAIL: ${matricula}`, "ERROR");
         incrementIpFailure(req.ip);
         // Resposta genérica para evitar enumeração

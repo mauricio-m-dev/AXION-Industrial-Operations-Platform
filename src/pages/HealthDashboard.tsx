@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Database, Server, Cpu, HardDrive, RefreshCw, Zap, Trash2, Power, ShieldAlert, Send, Radio, Terminal, Users, Clock, CheckCircle, AlertTriangle, FileText, ShieldX, Check } from "lucide-react";
@@ -148,38 +149,13 @@ export function HealthDashboard() {
     }
   };
 
-  const generateHealthReport = async () => {
-    // Refactored to use the professional LaTeX engine via backend
-    toast.loading("Analisando infraestrutura e compilando PDF LaTeX...", { id: "health-gen" });
-    try {
-      const res = await fetch(`/api/apm/reports/generate-pdf`, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ type: 'health', range: reportRange })
-      });
-      
-      if (!res.ok) throw new Error("Erro na geração do PDF.");
-      
-      const blob = await res.blob();
-      // deepcode ignore DOMXSS: blob URL from URL.createObjectURL is browser-controlled and cannot execute JS
-      triggerSafeDownload(blob, `auditoria_axion_${new Date().toISOString().split('T')[0]}.pdf`);
-      
-      toast.success("Auditoria (PDF) gerada com padrão executivo.", { id: "health-gen" });
-    } catch (err) {
-      toast.error("Erro no motor LaTeX. Usando visualização local...", { id: "health-gen" });
-      const element = document.getElementById('health-report-pdf-template');
-      if (element) {
-        element.style.display = 'block';
-        window.print();
-        element.style.display = 'none';
-      }
-    } finally {
+  const generateHealthReport = () => {
+    toast.success("Preparando documento para impressão ABNT...", { id: "health-gen" });
+    
+    setTimeout(() => {
+      window.print();
       setIsGenerating(false);
-    }
+    }, 500);
   };
 
   if (!health) {
@@ -719,77 +695,199 @@ export function HealthDashboard() {
       )}
 
       {/* Template Oculto para o Relatório de Saúde PDF */}
-      <div id="health-report-pdf-template" style={{ display: 'none', background: 'white', color: 'black', padding: '40px', width: '800px', fontFamily: 'sans-serif' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '4px solid #DC2626', paddingBottom: '20px', marginBottom: '30px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '24px', color: '#1e3a8a', fontWeight: 800 }}>AXION HEALTH AUDIT</h1>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '2px' }}>Relatório Técnico de Observabilidade</p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: 0, fontSize: '10px', fontWeight: 700 }}>GERADO EM: {new Date().toLocaleString()}</p>
-            <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>PERÍODO: {reportRange.toUpperCase()}</p>
-          </div>
-        </div>
+      {(() => {
+        const username = localStorage.getItem("admin-username") || "Técnico de Sistemas";
+        const matricula = localStorage.getItem("admin-matricula") || "---";
+        const apm = health?.apm;
+        if (!health) return null;
 
-        <div style={{ marginBottom: '30px' }}>
-          <h2 style={{ fontSize: '14px', background: '#f1f5f9', padding: '10px', borderRadius: '5px' }}>1. STATUS DA INFRAESTRUTURA</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '15px' }}>
-            <div style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '10px' }}>
-              <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>UPTIME DO SERVIDOR</p>
-              <p style={{ margin: '5px 0 0 0', fontSize: '18px', fontWeight: 700 }}>{formatUptime(health.uptime)}</p>
-            </div>
-            <div style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '10px' }}>
-              <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>STATUS MONGODB</p>
-              <p style={{ margin: '5px 0 0 0', fontSize: '18px', fontWeight: 700, color: health.services.mongodb === 'connected' ? '#10b981' : '#ef4444' }}>
-                {health.services.mongodb === 'connected' ? 'OPERACIONAL' : 'FALHA'}
-              </p>
-            </div>
-            <div style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '10px' }}>
-              <p style={{ margin: 0, fontSize: '10px', color: '#64748b' }}>STATUS REDIS CACHE</p>
-              <p style={{ margin: '5px 0 0 0', fontSize: '18px', fontWeight: 700, color: health.services.redis === 'connected' ? '#10b981' : '#ef4444' }}>
-                {health.services.redis === 'connected' ? 'OPERACIONAL' : 'FALHA'}
-              </p>
-            </div>
-          </div>
-        </div>
+        return createPortal(
+          <div id="health-report-pdf-template" className="hidden print:block relatorio-padrao print-only-abnt">
+            
+            {/* 1. Capa ABNT */}
+            <div className="report-cover">
+              <div className="cover-header">
+                <p className="abnt-logo-text">AXION TECHNOLOGY</p>
+                <p className="abnt-department">Tecnologia da Informação & Observabilidade</p>
+              </div>
 
-        <div style={{ marginBottom: '30px' }}>
-          <h2 style={{ fontSize: '14px', background: '#f1f5f9', padding: '10px', borderRadius: '5px' }}>2. TELEMETRIA MÉDIA DO PERÍODO</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-            <tbody>
-              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px', fontSize: '12px', color: '#475569' }}>Carga Média de CPU</td>
-                <td style={{ padding: '12px', fontSize: '12px', fontWeight: 700 }}>{health.system.cpu_load[0].toFixed(2)}%</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px', fontSize: '12px', color: '#475569' }}>Consumo de Memória (App)</td>
-                <td style={{ padding: '12px', fontSize: '12px', fontWeight: 700 }}>{health.system.memory_app_used_mb} MB</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px', fontSize: '12px', color: '#475569' }}>Latência Média de Resposta</td>
-                <td style={{ padding: '12px', fontSize: '12px', fontWeight: 700 }}>{apm?.avgLatencyMs || 0} ms</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+              <div className="cover-middle">
+                <h1 className="cover-title">Auditoria de Saúde: Observabilidade e Infraestrutura</h1>
+                <div className="cover-divider"></div>
+                <p className="cover-subtitle">Relatório do Sistema APM</p>
+              </div>
 
-        <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '15px', border: '1px solid #e2e8f0' }}>
-          <h2 style={{ fontSize: '14px', color: '#1e3a8a', marginBottom: '10px' }}>3. DIAGNÓSTICO DE INTELIGÊNCIA</h2>
-          <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
-            <p><strong>Status Geral:</strong> O sistema operou com estabilidade nominal. Não foram detectados vazamentos de memória críticos ou gargalos de CPU que comprometam a operação industrial no curto prazo.</p>
-            <p style={{ marginTop: '10px' }}><strong>Ações Recomendadas:</strong></p>
-            <ul style={{ paddingLeft: '20px' }}>
-              <li>Monitorar picos de latência durante as trocas de turno (pico de tráfego).</li>
-              <li>Manter a limpeza semanal de cache do Redis para otimização de performance.</li>
-              <li>Realizar backup preventivo do MongoDB mensalmente.</li>
+              <div className="cover-metadata">
+                <p><strong>Período Analisado:</strong> {reportRange.toUpperCase()}</p>
+                <p><strong>Setor/Área:</strong> Infraestrutura de Servidores e APM</p>
+                <p><strong>Responsável Técnico:</strong> {username} (Mtr: {matricula})</p>
+                <p><strong>Data de Emissão:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
+              </div>
+
+              <div className="cover-footer">
+                <p>CLASSIFICAÇÃO: USO INTERNO - CONFIDENCIAL</p>
+              </div>
+            </div>
+
+            {/* 2. Sumário ABNT */}
+            <div className="abnt-sumario">
+              <h2 className="sumario-title">Sumário</h2>
+              
+              <div className="sumario-row">
+                <div>
+                  <span className="sumario-section-num">1</span>
+                  <span className="sumario-section-title">OBJETIVO</span>
+                </div>
+                <div className="sumario-dots"></div>
+                <div>02</div>
+              </div>
+
+              <div className="sumario-row">
+                <div>
+                  <span className="sumario-section-num">2</span>
+                  <span className="sumario-section-title">METODOLOGIA / DADOS BASE</span>
+                </div>
+                <div className="sumario-dots"></div>
+                <div>02</div>
+              </div>
+
+              <div className="sumario-row">
+                <div>
+                  <span className="sumario-section-num">3</span>
+                  <span className="sumario-section-title">ANÁLISE / RESULTADOS</span>
+                </div>
+                <div className="sumario-dots"></div>
+                <div>02</div>
+              </div>
+
+              <div className="sumario-row" style={{ paddingLeft: '15px' }}>
+                <div>
+                  <span className="sumario-section-num">3.1</span>
+                  <span>Resumo de Serviços Core</span>
+                </div>
+                <div className="sumario-dots"></div>
+                <div>02</div>
+              </div>
+
+              <div className="sumario-row" style={{ paddingLeft: '15px' }}>
+                <div>
+                  <span className="sumario-section-num">3.2</span>
+                  <span>Telemetria de Consumo (Média)</span>
+                </div>
+                <div className="sumario-dots"></div>
+                <div>02</div>
+              </div>
+
+              <div className="sumario-row" style={{ paddingLeft: '15px' }}>
+                <div>
+                  <span className="sumario-section-num">3.3</span>
+                  <span>Diagnóstico do Motor de Inteligência</span>
+                </div>
+                <div className="sumario-dots"></div>
+                <div>03</div>
+              </div>
+
+              <div className="sumario-row">
+                <div>
+                  <span className="sumario-section-num">4</span>
+                  <span className="sumario-section-title">CONCLUSÃO / CONSIDERAÇÕES FINAIS</span>
+                </div>
+                <div className="sumario-dots"></div>
+                <div>03</div>
+              </div>
+            </div>
+
+            {/* 3. Corpo do Relatório */}
+            <h2 className="abnt-section">1 Objetivo</h2>
+            <p className="abnt-paragraph">
+              Este relatório de auditoria técnica de infraestrutura destina-se a avaliar e consolidar a integridade geral do servidor, o consumo médio de recursos de hardware e o tempo de resposta das conexões de banco de dados e mensageria da plataforma AXION. A finalidade estratégica é a manutenção preventiva de software, mitigação de vazamentos de memória e monitoramento em tempo real (APM) para garantir a continuidade operacional.
+            </p>
+
+            <h2 className="abnt-section">2 Metodologia / Dados Base</h2>
+            <p className="abnt-paragraph">
+              As métricas e telemetrias contidas neste documento foram computadas e consolidadas através do módulo de auditoria em segundo plano (Worker Cluster #1) integrado à base do sistema AXION. A coleta foi executada recursivamente de 5 em 5 minutos, considerando o período operacional de <strong>{reportRange.toUpperCase()}</strong>.
+            </p>
+
+            <h2 className="abnt-section">3 Análise / Resultados</h2>
+            <p className="abnt-paragraph">
+              Abaixo são descritos os parâmetros técnicos aferidos no servidor, incluindo a conectividade com serviços críticos externos e o comportamento de consumo físico do host.
+            </p>
+
+            <h3 className="abnt-subsection">3.1 Resumo de Serviços Core</h3>
+            <table className="abnt-table">
+              <thead>
+                <tr>
+                  <th>Componente do Servidor</th>
+                  <th className="text-right">Status Registrado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Uptime / Tempo de Atividade do Servidor</td>
+                  <td className="text-right">{formatUptime(health.uptime)}</td>
+                </tr>
+                <tr>
+                  <td>Conectividade MongoDB (Banco de Dados)</td>
+                  <td className="text-right">{health.services.mongodb === 'connected' ? 'Operacional / Conectado' : 'Falha / Desconectado'}</td>
+                </tr>
+                <tr>
+                  <td>Conectividade Redis (Cache & Rate Limiting)</td>
+                  <td className="text-right">{health.services.redis === 'connected' ? 'Operacional / Conectado' : 'Falha / Desconectado'}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 className="abnt-subsection">3.2 Telemetria de Consumo (Média)</h3>
+            <table className="abnt-table">
+              <thead>
+                <tr>
+                  <th>Métrica de Monitoramento</th>
+                  <th className="text-right">Valor Aferido</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Carga Média de Processamento (CPU Load)</td>
+                  <td className="text-right">{health.system.cpu_load[0].toFixed(2)}%</td>
+                </tr>
+                <tr>
+                  <td>Consumo de Memória Privada da Aplicação (RSS)</td>
+                  <td className="text-right">{health.system.memory_app_used_mb} MB</td>
+                </tr>
+                <tr>
+                  <td>Latência Média de Resposta de APIs HTTP</td>
+                  <td className="text-right">{apm?.avgLatencyMs || 0} ms</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 className="abnt-subsection">3.3 Diagnóstico do Motor de Inteligência</h3>
+            <p className="abnt-paragraph">
+              <strong>Status do Diagnóstico Heurístico:</strong> Com base na análise preditiva das métricas consolidadas, o sistema operou dentro da faixa de estabilidade nominal. Não foram registrados desvios críticos de consumo ou saturação de CPU/RAM. As seguintes ações preventivas são recomendadas para manter o desempenho técnico do ecossistema:
+            </p>
+            <ul style={{ paddingLeft: '2cm', marginBottom: '12pt' }}>
+              <li>Auditar picos de latência na API HTTP nas janelas de maior concorrência de operadores.</li>
+              <li>Monitores preventivos semanais de limpeza de cache de sessões do Redis.</li>
+              <li>Manter a rotina de backup frio do MongoDB mensalmente.</li>
             </ul>
-          </div>
-        </div>
 
-        <div style={{ marginTop: '40px', textAlign: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
-          <p style={{ fontSize: '9px', color: '#94a3b8' }}>AXION TECHNOLOGY - PLATAFORMA DE OPERAÇÕES INDUSTRIAIS</p>
-        </div>
-      </div>
+            <h2 className="abnt-section">4 Conclusão / Considerações Finais</h2>
+            <p className="abnt-paragraph">
+              Conclui-se que a infraestrutura técnica e lógica da plataforma AXION encontra-se estável e em regime adequado de operação no período avaliado. As conexões aos bancos de dados de produção MongoDB e Redis mantêm-se totalmente ativas e com latências satisfatórias. Recomenda-se prosseguir com as manutenções preventivas recomendadas pelo motor heurístico.
+            </p>
+
+            <br /><br /><br />
+            <div className="text-center" style={{ marginTop: '45pt', pageBreakInside: 'avoid' }}>
+              <hr style={{ width: '6cm', border: 'none', borderTop: '1px solid black', margin: '0 auto 10pt auto' }} />
+              <p style={{ fontSize: '10pt', margin: 0, fontWeight: 'bold' }}>{username}</p>
+              <p style={{ fontSize: '9pt', margin: 0 }}>Administrador de Infraestrutura & TI</p>
+              <p style={{ fontSize: '9pt', margin: 0 }}>Axion Operations System</p>
+            </div>
+
+          </div>,
+          document.body
+        );
+      })()}
     </div>
   );
 }

@@ -183,7 +183,7 @@ O AXION possui inteligência integrada para autopreservação e geração de mé
   - Latência de API > 1s: Deduz 20 pontos e sugere paginação e cache.
   - Latência do DB > 100ms: Deduz 15 pontos e sugere indexes ou redimensionamento de conexões.
   - Taxa de erros HTTP > 10%: Deduz 25 pontos e sugere revisão do log de auditoria.
-- **Geração de PDF Profissional**: Habilita a exportação de dois relatórios sofisticados em PDF que são gerados a partir do preenchimento de templates e compilados na hora usando um compilador de **LaTeX** (`texlive-xetex`):
+- **Geração de PDF Profissional**: Habilita a exportação de dois relatórios sofisticados em PDF gerados por meio de impressão nativa do navegador (usando HTML, CSS Paged Media `@media print` e a classe corporativa ABNT `.relatorio-padrao`):
   - **Relatório Operacional**: Consolida volumes, eficiência de encerramento, índice de conformidade de SLA, cálculo médio de MTTR (Mean Time to Repair) e FRT (First Response Time), distribuição de incidentes por turnos, análise de OEE (Disponibilidade, Performance e Qualidade) dos 10 AGVs mais problemáticos e ranking de velocidade de atendimento dos técnicos.
   - **Relatório de APM / Infraestrutura**: Traz o histórico de saúde física da máquina, diagnóstico de vulnerabilidades e lista de recomendações emitidas pela inteligência interna.
 

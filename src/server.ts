@@ -12,12 +12,15 @@ import redisClient, { connectRedis } from "./config/redis";
 import mongoose from "mongoose";
 import os from "os";
 import cluster from "cluster";
+import { apiLimiter } from "./middleware/rateLimiters";
 import rateLimit from "express-rate-limit";
-import { csrfProtection, contentTypeValidation, globalSanitizer, apiLimiter, checkIpBlacklist } from "./middleware/security";
+import { RedisStore } from "rate-limit-redis";
+import { csrfProtection, contentTypeValidation, globalSanitizer, checkIpBlacklist } from "./middleware/security";
 import { log } from "./utils/logger";
 import { initSocket } from "./socket";
 import { startSystemMonitor } from "./utils/monitor";
 import { apmMiddleware, getApmMetrics, isMaintenanceMode, startMetricsPersistence } from "./utils/apmTracker";
+import { globalErrorHandler } from "./middleware/errorHandler";
 
 // Route imports
 import authRoutes from "./routes/auth.routes";
@@ -26,13 +29,6 @@ import userRoutes from "./routes/user.routes";
 import feedbackRoutes from "./routes/feedback.routes";
 import auditRoutes from "./routes/audit.routes";
 import apmRoutes from "./routes/apm.routes";
-
-// Local limiter to satisfy Snyk Code analysis that requires rateLimit in the same file
-const localLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: "Too many requests, please try again later."
-});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BOOTSTRAP — Environment validation & directory setup
@@ -50,6 +46,16 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 
 const PORT = 3000;
 export const app = express();
+
+const localLimiter = rateLimit({
+  store: process.env.NODE_ENV === "test" ? undefined : new RedisStore({
+    prefix: "rl:server-local:",
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+  }),
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests, please try again later."
+});
 
 // Enable trust proxy for correct IP resolution behind cloud load balancers/proxies
 app.set("trust proxy", 1);
@@ -127,14 +133,21 @@ app.use(apmMiddleware);
 // 11. CSRF Protection
 app.use(csrfProtection);
 
-// Routes
-app.get("/api/health", async (req, res) => {
+// Liveness probe (is the process running?)
+app.get("/api/health/live", (req, res) => {
+  res.status(200).json({ status: "alive", uptime: process.uptime() });
+});
+
+// Readiness probe (can the app serve traffic?)
+app.get("/api/health/ready", async (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
   const redisStatus = redisClient.isOpen ? "connected" : "disconnected";
   const memoryUsage = process.memoryUsage();
   
-  res.json({ 
-    status: dbStatus === "connected" && redisStatus === "connected" ? "ok" : "degraded", 
+  const isReady = dbStatus === "connected" && redisStatus === "connected";
+  
+  res.status(isReady ? 200 : 503).json({ 
+    status: isReady ? "ready" : "not_ready", 
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     services: {
@@ -146,6 +159,38 @@ app.get("/api/health", async (req, res) => {
       memory_free_mb: Math.round(os.freemem() / 1024 / 1024),
       memory_app_used_mb: Math.round(memoryUsage.rss / 1024 / 1024),
       cpu_load: os.loadavg()
+    },
+    apm: getApmMetrics(),
+    maintenance: await isMaintenanceMode()
+  });
+});
+
+// Alias for backwards compatibility
+app.get("/api/health", async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  const redisStatus = redisClient.isOpen ? "connected" : "disconnected";
+  const memoryUsage = process.memoryUsage();
+  const isReady = dbStatus === "connected" && redisStatus === "connected";
+  
+  res.status(200).json({ 
+    status: isReady ? "ok" : "degraded", 
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    services: {
+      database: dbStatus,
+      mongodb: dbStatus,
+      redis: redisStatus
+    },
+    system: {
+      memory_total_mb: Math.round(os.totalmem() / 1024 / 1024),
+      memory_free_mb: Math.round(os.freemem() / 1024 / 1024),
+      memory_app_used_mb: Math.round(memoryUsage.rss / 1024 / 1024),
+      cpu_load: os.loadavg(),
+      memory: {
+        heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
+        rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`
+      }
     },
     apm: getApmMetrics(),
     maintenance: await isMaintenanceMode()
@@ -164,20 +209,17 @@ app.use("/api/apm", apmRoutes);
 app.use("/api", auditRoutes);
 
 // Documentation routes (rate-limited to prevent resource exhaustion)
-// snyk-disable-next-line NoRateLimitingForExpensiveWebOperation
+// deepcode ignore NoRateLimitingForExpensiveWebOperation: Protected by localLimiter and apiLimiter middleware
 app.get("/docs", localLimiter, apiLimiter, (req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "docs.html"));
 });
-// snyk-disable-next-line NoRateLimitingForExpensiveWebOperation
+// deepcode ignore NoRateLimitingForExpensiveWebOperation: Protected by localLimiter and apiLimiter middleware
 app.get("/api-docs.json", localLimiter, apiLimiter, (req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "api-docs.json"));
 });
 
 // Error Handling Global
-app.use((err: any, req: any, res: any, next: any) => {
-  log(`Global Error: ${err.message}`, "ERROR");
-  res.status(500).json({ error: "Erro interno no servidor" });
-});
+app.use(globalErrorHandler);
 
 // Static files (rate-limited to prevent resource exhaustion)
 // deepcode ignore NoRateLimitingForExpensiveWebOperation: Protected by apiLimiter middleware
@@ -193,7 +235,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath, { maxAge: '1y', immutable: true }));
-    // snyk-disable-next-line NoRateLimitingForExpensiveWebOperation
+    // deepcode ignore NoRateLimitingForExpensiveWebOperation: Protected by localLimiter and apiLimiter middleware
     app.get(/.*/, localLimiter, apiLimiter, (req, res) => res.sendFile(path.join(distPath, "index.html")));
   }
   const httpServer = app.listen(PORT, "0.0.0.0", () => {

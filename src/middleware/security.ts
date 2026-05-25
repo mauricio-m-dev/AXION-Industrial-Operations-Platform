@@ -12,10 +12,14 @@ import { log } from "../utils/logger";
 
 export function isLocalHostOrPrivateIP(hostname: string): boolean {
   try {
-    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.endsWith(".local")) {
+    let ip = hostname;
+    if (ip.startsWith("::ffff:")) {
+      ip = ip.substring(7);
+    }
+    if (ip === "localhost" || ip === "127.0.0.1" || ip === "::1" || ip.endsWith(".local")) {
       return true;
     }
-    const parts = hostname.split(".");
+    const parts = ip.split(".");
     if (parts.length === 4) {
       const first = parseInt(parts[0], 10);
       const second = parseInt(parts[1], 10);
@@ -222,6 +226,9 @@ export const securityHeaders = helmet();
 export const checkIpBlacklist = async (req: Request, res: Response, next: NextFunction) => {
   if (!redisClient || !redisClient.isOpen || !req.ip) return next();
   try {
+    if (isLocalHostOrPrivateIP(req.ip)) {
+      return next();
+    }
     const isBlacklisted = await redisClient.sIsMember("ip_blacklist", req.ip);
     if (isBlacklisted) {
       log(`Conexão recusada do IP na blacklist: ${req.ip}`, "WARN");
@@ -236,6 +243,9 @@ export const checkIpBlacklist = async (req: Request, res: Response, next: NextFu
 export const incrementIpFailure = async (ip?: string) => {
   if (!redisClient || !redisClient.isOpen || !ip) return;
   try {
+    if (isLocalHostOrPrivateIP(ip)) {
+      return;
+    }
     const key = `ip_fails:${ip}`;
     const failures = await redisClient.incr(key);
     if (failures === 1) {

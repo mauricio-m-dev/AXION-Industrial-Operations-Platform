@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+@import './assets/print-report.css';
 
 @theme {
   --color-brand-primary: #DC2626; /* Red-600 */
@@ -95,4 +96,3 @@
     display: none !important;
   }
 }
-

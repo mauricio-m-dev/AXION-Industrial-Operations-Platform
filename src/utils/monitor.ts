@@ -3,6 +3,11 @@ import mongoose from "mongoose";
 import redisClient from "../config/redis";
 import { sendWhatsAppMessage, sendEmailMessage } from "./notifications";
 import { log } from "./logger";
+import { CircuitBreaker } from "./circuitBreaker";
+
+const whatsappBreaker = new CircuitBreaker("MonitorWhatsApp", 3, 30000);
+const emailBreaker = new CircuitBreaker("MonitorEmail", 3, 30000);
+const discordBreaker = new CircuitBreaker("MonitorDiscord", 3, 30000);
 
 // Prevenir spam de alertas (Cooldown de 15 minutos por tipo de alerta)
 const alertCooldowns: Record<string, number> = {};
@@ -75,26 +80,33 @@ export function startSystemMonitor() {
         const htmlMessage = alerts.map(a => `<p>${a}</p>`).join("");
         log(`System Monitor Triggered Alerts: ${message}`, "WARN");
         
-        const targetPhone = "5571991681355";
-        const targetEmail = "axion.technology@gmail.com";
+        const targetPhone = process.env.SYSTEM_ADMIN_PHONE || "5571991681355";
+        const targetEmail = process.env.SYSTEM_ADMIN_EMAIL || "axion.technology@gmail.com";
         const emailSubject = "🚨 AXION CRITICAL SYSTEM ALERT";
 
         // Enviar para WhatsApp
-        await sendWhatsAppMessage(targetPhone, `*AXION SYSTEM MONITOR*\n\n${message}`).catch(e => log(`Monitor WhatsApp Error: ${e.message}`, "ERROR"));
+        await whatsappBreaker.fire(async () => {
+          await sendWhatsAppMessage(targetPhone, `*AXION SYSTEM MONITOR*\n\n${message}`);
+        }).catch(e => log(`Monitor WhatsApp Error: ${e.message}`, "ERROR"));
         
         // Enviar para E-mail
-        await sendEmailMessage(targetEmail, emailSubject, `<h2>AXION SYSTEM MONITOR</h2><div style="color:red; font-weight:bold;">${htmlMessage}</div><p>Acesse o servidor IMEDIATAMENTE para verificar a infraestrutura.</p>`).catch(e => log(`Monitor Email Error: ${e.message}`, "ERROR"));
+        await emailBreaker.fire(async () => {
+          await sendEmailMessage(targetEmail, emailSubject, `<h2>AXION SYSTEM MONITOR</h2><div style="color:red; font-weight:bold;">${htmlMessage}</div><p>Acesse o servidor IMEDIATAMENTE para verificar a infraestrutura.</p>`);
+        }).catch(e => log(`Monitor Email Error: ${e.message}`, "ERROR"));
 
         // Opcional: Ainda enviar pro Discord se configurado
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
         if (webhookUrl) {
-          await fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content: message,
-              username: "AXION Health Monitor"
-            })
+          await discordBreaker.fire(async () => {
+            await fetch(webhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: message,
+                username: "AXION Health Monitor"
+              }),
+              signal: AbortSignal.timeout(5000)
+            });
           }).catch(e => log(`Failed to send monitor webhook: ${e.message}`, "ERROR"));
         }
       }

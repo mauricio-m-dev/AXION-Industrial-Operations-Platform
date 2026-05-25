@@ -14,10 +14,9 @@ Antes de iniciar, certifique-se de ter as seguintes ferramentas instaladas em su
 | **npm** | `v10.x` ou superior (incluído no Node) | - |
 | **Docker** | Versão estável mais recente | [docker.com](https://www.docker.com/) |
 | **Docker Compose** | `v2.x` ou superior | - |
-| **LaTeX (TeX Live)** | Necessário para gerar relatórios PDF | [tug.org/texlive](https://www.tug.org/texlive/) |
 
 > [!NOTE]
-> Se você estiver utilizando **Docker**, as dependências de LaTeX, MongoDB e Redis já estão configuradas dentro dos contêineres e não precisam ser instaladas localmente.
+> Se você estiver utilizando **Docker**, as dependências de MongoDB e Redis já estão configuradas dentro dos contêineres e não precisam ser instaladas localmente.
 
 ---
 
@@ -94,7 +93,7 @@ O projeto utiliza as seguintes tecnologias principais:
 -   **Backend:** Node.js, Express, TypeScript (tsx).
 -   **ORM/Database:** Mongoose (MongoDB).
 -   **Comunicação:** Socket.io (Tempo real).
--   **Relatórios:** node-latex (Geração de PDFs técnicos).
+-   **Relatórios:** Impressão Nativa do Navegador (CSS Paged Media @media print).
 -   **Segurança:** Argon2 (Hash), JSON Web Token (JWT), Helmet, Express Rate Limit.
 
 ---

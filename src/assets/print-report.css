@@ -1,0 +1,254 @@
+@media print {
+  @page {
+    size: A4;
+    margin: 3cm 2cm 2cm 3cm;
+  }
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background-color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Ocultar a UI principal do aplicativo React para imprimir apenas o portal do relatório */
+  #root {
+    display: none !important;
+  }
+
+  /* Container pai para garantir que a impressão cubra toda a tela */
+  .print-container {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  /* Capa ABNT */
+  .report-cover {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    min-height: 23cm; /* Altura útil da página A4 com margens */
+    page-break-after: always;
+    break-after: page;
+    box-sizing: border-box;
+    padding: 1cm 0;
+  }
+
+  .cover-header {
+    margin-bottom: 2cm;
+    text-align: center;
+  }
+
+  .abnt-logo-text {
+    font-size: 16pt;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  .abnt-department {
+    font-size: 10pt;
+    margin-top: 5pt;
+    text-transform: uppercase;
+    color: #333;
+  }
+
+  .cover-middle {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 2cm 0;
+  }
+
+  .cover-title {
+    font-size: 20pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0 0 10pt 0;
+    line-height: 1.2;
+  }
+
+  .cover-divider {
+    width: 8cm;
+    height: 1pt;
+    background-color: black;
+    margin: 10pt 0 10pt 0;
+  }
+
+  .cover-subtitle {
+    font-size: 14pt;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cover-metadata {
+    text-align: left;
+    width: 100%;
+    max-width: 12cm;
+    font-size: 11pt;
+    margin-top: auto;
+    margin-bottom: 2cm;
+    line-height: 1.6;
+    border-left: 3px solid black;
+    padding-left: 15pt;
+  }
+
+  .cover-metadata p {
+    margin: 3pt 0;
+  }
+
+  .cover-footer {
+    font-size: 9pt;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #444;
+  }
+
+  /* Sumário ABNT */
+  .abnt-sumario {
+    page-break-after: always;
+    break-after: page;
+    margin-top: 1.5cm;
+    width: 100%;
+  }
+
+  .sumario-title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 30pt;
+    text-align: center;
+  }
+
+  .sumario-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 12pt;
+    font-size: 12pt;
+  }
+
+  .sumario-dots {
+    flex-grow: 1;
+    border-bottom: 1.5pt dotted #000;
+    margin: 0 10px 4px 10px;
+  }
+
+  .sumario-section-num {
+    font-weight: bold;
+    margin-right: 5px;
+  }
+
+  .sumario-section-title {
+    font-weight: bold;
+  }
+
+
+  /* Estilização Base ABNT */
+  .relatorio-padrao, .relatorio-padrao * {
+    visibility: visible !important;
+  }
+
+  .relatorio-padrao {
+    display: block !important;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+    background: #fff;
+    width: 100%;
+  }
+
+  /* Títulos e Seções */
+  .relatorio-padrao .abnt-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 14pt;
+    text-transform: uppercase;
+    margin-bottom: 24pt;
+    page-break-after: avoid;
+  }
+
+  .relatorio-padrao .abnt-section {
+    font-weight: bold;
+    font-size: 14pt;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    page-break-after: avoid;
+  }
+
+  .relatorio-padrao .abnt-subsection {
+    font-weight: bold;
+    font-size: 12pt;
+    margin-top: 18pt;
+    margin-bottom: 12pt;
+    page-break-after: avoid;
+  }
+
+  /* Parágrafos e Textos */
+  .relatorio-padrao .abnt-paragraph {
+    text-align: justify;
+    text-indent: 1.25cm;
+    margin-bottom: 12pt;
+    orphans: 3;
+    widows: 3;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Tabelas Profissionais (Booktabs style) */
+  .relatorio-padrao .abnt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    margin-bottom: 18pt;
+    page-break-inside: auto;
+  }
+
+  .relatorio-padrao .abnt-table thead {
+    display: table-header-group;
+  }
+
+  .relatorio-padrao .abnt-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .relatorio-padrao .abnt-table th, 
+  .relatorio-padrao .abnt-table td {
+    padding: 6pt 4pt;
+    text-align: left;
+    border: none; /* Reset grosseria */
+  }
+
+  .relatorio-padrao .abnt-table th {
+    border-top: 1.5pt solid black;
+    border-bottom: 1pt solid black;
+    font-weight: bold;
+  }
+
+  .relatorio-padrao .abnt-table td {
+    border-bottom: 0.5pt solid #ddd;
+  }
+
+  .relatorio-padrao .abnt-table tr:last-child td {
+    border-bottom: 1.5pt solid black;
+  }
+
+  /* Utilitários */
+  .relatorio-padrao .text-center { text-align: center !important; }
+  .relatorio-padrao .text-right { text-align: right !important; }
+  .relatorio-padrao .page-break { page-break-before: always; }
+}

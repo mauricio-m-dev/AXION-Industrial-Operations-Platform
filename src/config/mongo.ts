@@ -8,8 +8,8 @@ export async function connectMongoDB() {
   const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/Axion";
   try {
     await mongoose.connect(uri, {
-      maxPoolSize: 50, // Mantém até 50 conexões ativas no pool (Performance)
-      minPoolSize: 10, // Mantém mínimo de 10 conexões preparadas
+      maxPoolSize: 20, // Mantém até 20 conexões ativas no pool (Performance)
+      minPoolSize: 5, // Mantém mínimo de 5 conexões preparadas
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });

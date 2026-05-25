@@ -13,8 +13,7 @@ User.find = (async (query?: any) => {
     password: process.env.TEST_USER_PASSWORD || "",
     role: "SuperAdmin",
     email: "mauricio.m.silv4@gmail.com",
-    whatsapp: "5511999999999", // Número de teste
-    notificationPreference: "both",
+    notificationPreference: "email",
     allowedTicketTypes: ["Colisão", "AGV com falha", "Falta de peças", "Painel/Botoeira"]
   } as any];
 }) as any;

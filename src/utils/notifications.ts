@@ -1,6 +1,6 @@
-import { User } from "../models/mongoose";
+import { User, WeComWebhook } from "../models/mongoose";
 import { log } from "./logger";
-import { sendDiscordWebhook } from "./webhook";
+import { sendDiscordWebhook, sendWeComMessage } from "./webhook";
 import { buildUnifiedEmailHtml } from "./templates/email.template";
 import nodemailer from "nodemailer";
 
@@ -34,9 +34,9 @@ export interface TicketFinishedData {
 /** User record shape returned by getNotificationTargetUsers */
 interface NotificationTargetUser {
   username: string;
-  whatsapp?: string;
   email?: string;
   notificationPreference?: string;
+  role?: string;
 }
 
 // Configuração do Nodemailer (SMTP)
@@ -50,57 +50,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendWhatsAppMessage(phone: string, message: string) {
-  try {
-    let apiUrl = process.env.WHATSAPP_API_URL;
-    const apiKey = process.env.WHATSAPP_API_KEY;
-    const sender = process.env.WHATSAPP_SENDER_NUMBER;
-
-    if (!apiUrl || !sender) {
-      log(`[Mock WhatsApp -> ${phone}]: \n${message}`, "INFO");
-      return;
-    }
-
-    // Garante que a URL tenha o protocolo https://
-    if (!apiUrl.startsWith('http')) {
-      apiUrl = `https://${apiUrl}`;
-    }
-
-    // Formatação de número limpo para Infobip (apenas dígitos)
-    const cleanPhone = phone.replace(/\D/g, '');
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `App ${apiKey}`,
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        from: sender,
-        to: cleanPhone,
-        content: {
-          text: message
-        },
-        // Compatibilidade com endpoints de broadcast/SMS da Infobip
-        messages: [{
-          from: sender,
-          destinations: [{ to: cleanPhone }],
-          text: message
-        }]
-      }),
-      signal: AbortSignal.timeout(10000)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status} - ${await response.text()}`);
-    }
-
-    log(`[WhatsApp -> ${phone}]: Mensagem enviada com sucesso via Infobip`, "INFO");
-  } catch (error: any) {
-    log(`Erro no envio de WhatsApp para ${phone}: ${error.message}`, "ERROR");
-  }
-}
 
 export async function sendEmailMessage(email: string, subject: string, htmlMessage: string) {
   try {
@@ -138,27 +87,24 @@ export async function notifyUsersAboutTicket(ticketData: TicketNotificationData,
     const alertLevel = isColisao ? "🚨 ALERTA CRÍTICO — COLISÃO" : "🚨 ALERTA CRÍTICO";
     const date = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
-    // Mensagem com padrão formal, objective e padronizado
-    const messageTemplate = `*AXION - CENTRAL DE OPERAÇÕES*
-${alertLevel}
+    // Mensagem WeCom formatada com Markdown nativo
+    const messageTemplate = `# AXION - CENTRAL DE OPERAÇÕES
+<font color="warning">${alertLevel}</font>
 
-Prezado(a) {{USER_NAME}},
+${isColisao ? "⚠️ Um chamado de **COLISÃO** foi registrado e classificado automaticamente como CRÍTICO." : "Um chamado crítico foi registrado no sistema e requer ação imediata."}
 
-${isColisao ? "⚠️ Um chamado de *COLISÃO* foi registrado e classificado automaticamente como CRÍTICO." : "Um chamado crítico foi registrado no sistema e requer ação imediata."}
-
-*Detalhes da Ocorrência:*
-• *ID:* ${ticketData.id}
-• *Prioridade:* ${priority}
-• *Tipo:* ${ticketData.type}
-• *Setor/Local:* ${ticketData.location}
-• *Impacto:* ${ticketData.impact === "total" ? "Parada Total da Linha" : "Impacto Parcial / Operacional"}
-• *Operador Responsável:* ${ticketData.operator_name || "N/A"}
-• *Horário da Ocorrência:* ${date}
+**Detalhes da Ocorrência:**
+> **ID:** ${ticketData.id}
+> **Prioridade:** ${priority}
+> **Tipo:** ${ticketData.type}
+> **Setor/Local:** ${ticketData.location}
+> **Impacto:** ${ticketData.impact === "total" ? "Parada Total da Linha" : "Impacto Parcial / Operacional"}
+> **Operador Responsável:** ${ticketData.operator_name || "N/A"}
+> **Horário da Ocorrência:** ${date}
 
 Por favor, acesse a plataforma AXION imediatamente para realizar a tratativa do chamado.
 
-Atenciosamente,
-*Sistema Automatizado AXION*`;
+🔗 [Acessar Sistema AXION](https://app.axiontechnology.cloud)`;
 
     const emailHtmlTemplate = buildUnifiedEmailHtml({
       title: "AXION - CENTRAL DE OPERAÇÕES",
@@ -178,8 +124,8 @@ Atenciosamente,
       ]
     });
 
-    // Enviar para todos os usuários autorizados via WhatsApp E Email
-    await dispatchNotifications(targetUsers, messageTemplate, `AXION: ${alertLevel} - ${ticketData.id}`, emailHtmlTemplate);
+    // Enviar notificações via WeCom (Setorial) e Email (SuperAdmin)
+    await dispatchNotifications(targetUsers, messageTemplate, `AXION: ${alertLevel} - ${ticketData.id}`, emailHtmlTemplate, ticketData.type);
 
     // Still send to Discord generic webhook
     await sendDiscordWebhook(
@@ -195,7 +141,7 @@ Atenciosamente,
 
 /**
  * Notifica todos os gestores/moderadores autorizados sobre a finalização de um chamado,
- * incluindo o relatório de resolução completo. Enviado via WhatsApp e Email.
+ * incluindo o relatório de resolução completo. Enviado via WeCom e Email.
  */
 export async function notifyUsersAboutTicketFinished(ticketData: TicketFinishedData) {
   try {
@@ -228,7 +174,7 @@ export async function notifyUsersAboutTicketFinished(ticketData: TicketFinishedD
       : "N/A";
     const finishedAtStr = finishedAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
-    // Truncar relatório para WhatsApp (máximo 500 caracteres)
+    // Truncar relatório para WeCom (máximo 500 caracteres)
     const reportTruncated = typeof ticketData.resolution_report === "string"
       ? (ticketData.resolution_report.length > 500
         ? ticketData.resolution_report.substring(0, 500) + "..."
@@ -237,30 +183,27 @@ export async function notifyUsersAboutTicketFinished(ticketData: TicketFinishedD
 
     const alertLevel = "✅ CHAMADO FINALIZADO";
 
-    const messageTemplate = `*AXION - CENTRAL DE OPERAÇÕES*
-${alertLevel}
-
-Prezado(a) {{USER_NAME}},
+    const messageTemplate = `# AXION - CENTRAL DE OPERAÇÕES
+<font color="info">${alertLevel}</font>
 
 O chamado abaixo foi finalizado com sucesso.
 
-*Detalhes da Finalização:*
-• *ID:* ${ticketData.id}
-• *Tipo:* ${ticketData.type}
-• *Prioridade:* ${ticketData.priority || "N/A"}
-• *Setor/Local:* ${ticketData.location}
-• *Operador Solicitante:* ${ticketData.operator_name || "N/A"}
-• *Técnico Responsável:* ${ticketData.assigned_to || "N/A"}
-• *Finalizado por:* ${ticketData.finished_by || "N/A"}
-• *Abertura:* ${createdAtStr}
-• *Finalização:* ${finishedAtStr}
-• *Tempo de Resolução (MTTR):* ${mttrDisplay}
+**Detalhes da Finalização:**
+> **ID:** ${ticketData.id}
+> **Tipo:** ${ticketData.type}
+> **Prioridade:** ${ticketData.priority || "N/A"}
+> **Setor/Local:** ${ticketData.location}
+> **Operador Solicitante:** ${ticketData.operator_name || "N/A"}
+> **Técnico Responsável:** ${ticketData.assigned_to || "N/A"}
+> **Finalizado por:** ${ticketData.finished_by || "N/A"}
+> **Abertura:** ${createdAtStr}
+> **Finalização:** ${finishedAtStr}
+> **Tempo de Resolução (MTTR):** ${mttrDisplay}
 
-*Relatório de Finalização:*
+**Relatório de Finalização:**
 ${reportTruncated}
 
-Atenciosamente,
-*Sistema Automatizado AXION*`;
+🔗 [Acessar Sistema AXION](https://app.axiontechnology.cloud)`;
 
     const emailHtmlTemplate = buildUnifiedEmailHtml({
       title: "AXION - CENTRAL DE OPERAÇÕES",
@@ -288,8 +231,8 @@ Atenciosamente,
       }
     });
 
-    // Enviar para todos os usuários autorizados via WhatsApp E Email
-    await dispatchNotifications(targetUsers, messageTemplate, `AXION: ${alertLevel} - ${ticketData.id}`, emailHtmlTemplate);
+    // Enviar notificações via WeCom (Setorial) e Email (SuperAdmin)
+    await dispatchNotifications(targetUsers, messageTemplate, `AXION: ${alertLevel} - ${ticketData.id}`, emailHtmlTemplate, ticketData.type);
 
     // Discord webhook
     await sendDiscordWebhook(
@@ -319,9 +262,9 @@ async function getNotificationTargetUsers(options: NotificationOptions): Promise
   if (registeredUsers.length === 0) {
     return [{
       username: "Admin Teste",
-      whatsapp: "5511999999999",
       email: process.env.SMTP_USER || "axion.technology@gmail.com",
-      notificationPreference: "both"
+      notificationPreference: "both",
+      role: "SuperAdmin"
     } as NotificationTargetUser];
   }
 
@@ -343,37 +286,64 @@ async function getNotificationTargetUsers(options: NotificationOptions): Promise
     return true; // SuperAdmin e Admin recebem todas
   });
 
-  return targetUsers as unknown as NotificationTargetUser[];
+  return targetUsers.map((u: any) => ({
+    username: u.username,
+    email: u.email,
+    notificationPreference: u.notificationPreference,
+    role: u.role
+  })) as NotificationTargetUser[];
 }
 
 /**
- * Despacha notificações para todos os usuários-alvo via WhatsApp E Email.
- * Todos os alertas são enviados para AMBOS canais simultaneamente.
+ * Despacha notificações roteadas:
+ * - WeCom: único disparo para a URL correspondente à categoria.
+ * - E-mail: disparado apenas para usuários com perfil de SuperAdmin.
  */
 async function dispatchNotifications(
   targetUsers: NotificationTargetUser[],
-  whatsappMessage: string,
+  wecomMessage: string,
   emailSubject: string,
-  emailHtml: string
+  emailHtml: string,
+  ticketType: string
 ): Promise<void> {
   const promises: Promise<void>[] = [];
 
-  for (const user of targetUsers) {
-    const personalizedWhatsapp = whatsappMessage.replace(/\{\{USER_NAME\}\}/g, user.username);
-    const personalizedEmail = emailHtml.replace(/\{\{USER_NAME\}\}/g, user.username);
-
-    // WhatsApp — envia para TODOS os usuários que têm número cadastrado
-    if (user.whatsapp && user.whatsapp.trim() !== "") {
-      promises.push(sendWhatsAppMessage(user.whatsapp, personalizedWhatsapp));
+  // WeCom Routing (Setorial - Dinâmico via DB com fallback pro .env)
+  try {
+    const webhooksDb = await WeComWebhook.find();
+    let webhookUrls: string[] = [];
+    
+    // Procura webhooks que estão associados a este tipo de chamado especificamente
+    const matchingWebhooks = webhooksDb.filter((wh: any) => wh.ticketTypes?.includes(ticketType));
+    
+    if (matchingWebhooks.length > 0) {
+      webhookUrls = matchingWebhooks.map((wh: any) => wh.url);
     } else {
-      log(`Usuário ${user.username}: WhatsApp não cadastrado, enviando apenas por e-mail.`, "WARN");
+      // Fallback para webhooks marcados como 'Default' (ou similar) se houver lógica no futuro
+      // Ou fallback para .env
+      const wecomMapString = process.env.WECOM_WEBHOOKS_MAP || '{}';
+      const wecomMap = JSON.parse(wecomMapString);
+      const fallbackUrl = wecomMap[ticketType] || wecomMap["default"];
+      if (fallbackUrl) webhookUrls.push(fallbackUrl);
     }
 
-    // Email — envia para TODOS os usuários que têm email cadastrado
-    if (user.email && user.email.trim() !== "") {
-      promises.push(sendEmailMessage(user.email, emailSubject, personalizedEmail));
+    if (webhookUrls.length > 0) {
+      // Dispara para todas as URLs encontradas (caso um chamado pertencesse a múltiplos grupos no futuro)
+      for (const url of webhookUrls) {
+        promises.push(sendWeComMessage(url, wecomMessage));
+      }
     } else {
-      log(`Usuário ${user.username}: E-mail não cadastrado, enviando apenas por WhatsApp.`, "WARN");
+      log(`[WeCom]: Nenhuma URL configurada no DB nem no .env para '${ticketType}'.`, "WARN");
+    }
+  } catch (e: any) {
+    log(`[WeCom]: Erro ao buscar webhooks ou parsear fallback: ${e.message}`, "ERROR");
+  }
+
+  // Email Routing (Exclusivo SuperAdmin)
+  for (const user of targetUsers) {
+    if (user.role === "SuperAdmin" && user.email && user.email.trim() !== "") {
+      const personalizedEmail = emailHtml.replace(/\{\{USER_NAME\}\}/g, user.username);
+      promises.push(sendEmailMessage(user.email, emailSubject, personalizedEmail));
     }
   }
 

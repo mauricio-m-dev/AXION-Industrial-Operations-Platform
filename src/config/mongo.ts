@@ -84,14 +84,8 @@ export async function seedAdmin() {
         needsUpdate = true;
       }
 
-      const defaultWhatsapp = "5511999999999";
-      if (!admin.whatsapp) {
-        admin.whatsapp = defaultWhatsapp;
-        needsUpdate = true;
-      }
-
-      if (admin.notificationPreference !== "both") {
-        admin.notificationPreference = "both";
+      if (admin.notificationPreference !== "email") {
+        admin.notificationPreference = "email";
         needsUpdate = true;
       }
 
@@ -109,8 +103,7 @@ export async function seedAdmin() {
         matricula: "0000000",
         password: hashedPassword,
         role: "SuperAdmin",
-        whatsapp: "5511999999999",
-        notificationPreference: "both"
+        notificationPreference: "email"
       });
       log("Admin user created successfully.");
     }

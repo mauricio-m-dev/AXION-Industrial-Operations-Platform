@@ -29,6 +29,7 @@ import userRoutes from "./routes/user.routes";
 import feedbackRoutes from "./routes/feedback.routes";
 import auditRoutes from "./routes/audit.routes";
 import apmRoutes from "./routes/apm.routes";
+import webhookRoutes from "./routes/webhook.routes";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BOOTSTRAP — Environment validation & directory setup
@@ -206,6 +207,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/apm", apmRoutes);
+app.use("/api/webhooks", webhookRoutes);
 app.use("/api", auditRoutes);
 
 // Documentation routes (rate-limited to prevent resource exhaustion)

@@ -11,9 +11,8 @@ async function getNotificationTargetUsers(options: any): Promise<any[]> {
   if (registeredUsers.length === 0) {
     return [{
       username: "Admin Teste",
-      whatsapp: "5511999999999",
       email: process.env.SMTP_USER || "axion.technology@gmail.com",
-      notificationPreference: "both"
+      notificationPreference: "email"
     }];
   }
 

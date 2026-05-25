@@ -16,12 +16,9 @@ export class UserService {
   }
 
   public async createUser(data: any, currentUser: any) {
-    const { username, matricula, password, role, whatsapp, email, notificationPreference, allowedTicketTypes } = data;
+    const { username, matricula, password, role, email, notificationPreference, allowedTicketTypes } = data;
 
-    if (notificationPreference === 'whatsapp' || notificationPreference === 'both') {
-      if (!whatsapp) throw Object.assign(new Error("WhatsApp é obrigatório para esta preferência."), { status: 400 });
-    }
-    if (notificationPreference === 'email' || notificationPreference === 'both') {
+    if (notificationPreference === 'email') {
       if (!email) throw Object.assign(new Error("E-mail é obrigatório para esta preferência."), { status: 400 });
     }
 
@@ -42,7 +39,7 @@ export class UserService {
 
     await User.create({ 
       id, username, matricula, password: hashedPassword, role: userRole, 
-      whatsapp, email, notificationPreference, allowedTicketTypes: allowedTicketTypes || []
+      email, notificationPreference, allowedTicketTypes: allowedTicketTypes || []
     });
 
     log(`User created: ${username}`);
@@ -52,7 +49,7 @@ export class UserService {
   }
 
   public async getUsers() {
-    return User.find({}, { _id: 0, id: 1, username: 1, matricula: 1, role: 1, whatsapp: 1, email: 1, notificationPreference: 1, allowedTicketTypes: 1 })
+    return User.find({}, { _id: 0, id: 1, username: 1, matricula: 1, role: 1, email: 1, notificationPreference: 1, allowedTicketTypes: 1 })
       .sort({ username: 1 })
       .lean();
   }
@@ -75,7 +72,7 @@ export class UserService {
   }
 
   public async updateUser(id: string, data: any, currentUser: any) {
-    const { username, matricula, role, whatsapp, email, notificationPreference, password, allowedTicketTypes } = data;
+    const { username, matricula, role, email, notificationPreference, password, allowedTicketTypes } = data;
 
     const user = await User.findOne({ id });
     if (!user) throw Object.assign(new Error("Usuário não encontrado"), { status: 404 });
@@ -99,7 +96,6 @@ export class UserService {
     }
 
     if (role) user.role = role;
-    if (whatsapp !== undefined) user.whatsapp = whatsapp;
     if (email !== undefined) user.email = email;
     if (notificationPreference) user.notificationPreference = notificationPreference;
     if (allowedTicketTypes !== undefined) user.allowedTicketTypes = allowedTicketTypes;

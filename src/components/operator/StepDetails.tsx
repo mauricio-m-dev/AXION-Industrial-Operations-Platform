@@ -123,7 +123,7 @@ export const StepDetails = ({ t, formData, setFormData, nextStep }: StepDetailsP
             <div className="flex-1">
               <p className="text-[clamp(0.7rem,1.8vw,0.8rem)] font-extrabold uppercase tracking-wider mb-1">Prioridade Crítica Automática</p>
               <p className="text-[clamp(0.65rem,1.6vw,0.75rem)] font-medium leading-relaxed">
-                Chamados de colisão são classificados automaticamente como urgência máxima (<b>Crítico</b>). O sistema notificará os gestores via WhatsApp e Email imediatamente.
+                Chamados de colisão são classificados automaticamente como urgência máxima (<b>Crítico</b>). O sistema notificará os gestores via WeCom e Email imediatamente.
               </p>
             </div>
           </div>

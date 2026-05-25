@@ -11,7 +11,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { ModernStatCard } from "../components/admin/ModernStatCard";
 import { SettingsContainer } from "./SettingsContainer";
 import { AnalyticsTab } from "./AnalyticsTab";
-import { HealthDashboard } from "./HealthDashboard";
+import { ApmContainer } from "./ApmContainer";
 import { Ticket } from "../types/ticket";
 import { useTickets } from "../hooks/admin/useTickets";
 import { useTicketActions } from "../hooks/admin/useTicketActions";
@@ -245,7 +245,7 @@ export default function AdminPage() {
           ) : activeTab === "performance" ? (
             <AnalyticsTab tickets={tickets} getStatusBadge={() => <></>} /> 
           ) : activeTab === "health" ? (
-            <HealthDashboard />
+            <ApmContainer />
           ) : activeTab === "settings" ? (
             <SettingsContainer />
           ) : null}

@@ -38,3 +38,30 @@ export async function sendDiscordWebhook(title: string, description: string, col
     log(`Webhook Error: ${error.message}`, "ERROR");
   }
 }
+
+/**
+ * Sends a notification to a WeCom Group Robot webhook.
+ */
+export async function sendWeComMessage(webhookUrl: string, markdownMessage: string) {
+  try {
+    const payload = {
+      msgtype: "markdown",
+      markdown: { content: markdownMessage }
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status} - ${await response.text()}`);
+    }
+
+    log(`[WeCom]: Mensagem enviada com sucesso`, "INFO");
+  } catch (error: any) {
+    log(`Erro no envio de WeCom: ${error.message}`, "ERROR");
+  }
+}

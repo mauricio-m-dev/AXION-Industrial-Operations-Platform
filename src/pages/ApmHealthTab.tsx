@@ -32,13 +32,13 @@ interface HealthData {
   maintenance?: boolean;
 }
 
-export function HealthDashboard() {
+export function ApmHealthTab() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [targetInput, setTargetInput] = useState("");
-  const [testType, setTestType] = useState<"whatsapp" | "email">("email");
+  const [testType, setTestType] = useState<"wecom" | "email">("email");
   const [wipeModalOpen, setWipeModalOpen] = useState(false);
   const [wipePassword, setWipePassword] = useState("");
   const [reportRange, setReportRange] = useState<"24h" | "7d" | "30d">("24h");
@@ -316,11 +316,11 @@ export function HealthDashboard() {
                 className="bg-white/10 border border-white/10 rounded-sm text-xs px-2.5 py-2 text-zinc-200 outline-none focus:border-red-400 h-9"
               >
                 <option value="email" className="bg-zinc-900">E-mail SMTP</option>
-                <option value="whatsapp" className="bg-zinc-900">WhatsApp API</option>
+                <option value="wecom" className="bg-zinc-900">WeCom Group Robot</option>
               </select>
               <input
                 type="text"
-                placeholder={testType === "email" ? "destinatario@email.com" : "5511999999999"}
+                placeholder={testType === "email" ? "destinatario@email.com" : "URL do Webhook WeCom"}
                 value={targetInput}
                 onChange={(e) => setTargetInput(e.target.value)}
                 className="bg-white/10 border border-white/10 rounded-sm text-xs px-3 py-2 text-zinc-200 outline-none focus:border-red-400 flex-1 h-9 placeholder:text-zinc-500"

@@ -190,10 +190,8 @@ SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASS=
 
-# WhatsApp API (Opcional)
-WHATSAPP_API_URL=
-WHATSAPP_API_KEY=
-WHATSAPP_SENDER_NUMBER=
+# WeCom Webhooks (Integração)
+WECOM_WEBHOOKS_MAP='{"default": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=SUA_CHAVE_AQUI"}'
 ```
 
 #### 3.3 — Gerar Certificado SSL (Para o Nginx interno)

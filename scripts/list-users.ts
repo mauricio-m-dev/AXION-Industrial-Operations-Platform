@@ -13,8 +13,7 @@ async function run() {
       role: u.role,
       notificationPreference: u.notificationPreference,
       allowedTicketTypes: u.allowedTicketTypes,
-      email: u.email,
-      whatsapp: u.whatsapp
+      email: u.email
     });
   }
   process.exit(0);

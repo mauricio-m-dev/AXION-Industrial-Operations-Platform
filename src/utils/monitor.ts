@@ -1,11 +1,10 @@
 import os from "os";
 import mongoose from "mongoose";
 import redisClient from "../config/redis";
-import { sendWhatsAppMessage, sendEmailMessage } from "./notifications";
+import { sendEmailMessage } from "./notifications";
 import { log } from "./logger";
 import { CircuitBreaker } from "./circuitBreaker";
 
-const whatsappBreaker = new CircuitBreaker("MonitorWhatsApp", 3, 30000);
 const emailBreaker = new CircuitBreaker("MonitorEmail", 3, 30000);
 const discordBreaker = new CircuitBreaker("MonitorDiscord", 3, 30000);
 
@@ -80,14 +79,8 @@ export function startSystemMonitor() {
         const htmlMessage = alerts.map(a => `<p>${a}</p>`).join("");
         log(`System Monitor Triggered Alerts: ${message}`, "WARN");
         
-        const targetPhone = process.env.SYSTEM_ADMIN_PHONE || "5571991681355";
         const targetEmail = process.env.SYSTEM_ADMIN_EMAIL || "axion.technology@gmail.com";
         const emailSubject = "🚨 AXION CRITICAL SYSTEM ALERT";
-
-        // Enviar para WhatsApp
-        await whatsappBreaker.fire(async () => {
-          await sendWhatsAppMessage(targetPhone, `*AXION SYSTEM MONITOR*\n\n${message}`);
-        }).catch(e => log(`Monitor WhatsApp Error: ${e.message}`, "ERROR"));
         
         // Enviar para E-mail
         await emailBreaker.fire(async () => {

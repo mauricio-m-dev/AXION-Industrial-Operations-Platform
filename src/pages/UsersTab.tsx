@@ -13,7 +13,6 @@ interface User {
   username: string;
   role: string;
   matricula?: string;
-  whatsapp?: string;
   email?: string;
   notificationPreference?: string;
   allowedTicketTypes?: string[];
@@ -27,7 +26,6 @@ export function UsersTab() {
   const [matricula, setMatricula] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("Usuário");
-  const [whatsapp, setWhatsapp] = useState("");
   const [email, setEmail] = useState("");
   const [notificationPreference, setNotificationPreference] = useState("none");
   const AVAILABLE_TYPES = [
@@ -95,13 +93,8 @@ export function UsersTab() {
       toast.error(t("users.password.min"));
       return;
     }
-    if (notificationPreference === 'whatsapp' || notificationPreference === 'both') {
-      if (!whatsapp.trim()) {
-        toast.error("WhatsApp é obrigatório para esta preferência.");
-        return;
-      }
-    }
-    if (notificationPreference === 'email' || notificationPreference === 'both') {
+
+    if (notificationPreference === 'email') {
       if (!email.trim()) {
         toast.error("E-mail é obrigatório para esta preferência.");
         return;
@@ -117,7 +110,7 @@ export function UsersTab() {
           
           "X-Requested-With": "XMLHttpRequest"
         },
-        body: JSON.stringify({ username, matricula, password, role, whatsapp, email, notificationPreference, allowedTicketTypes }),
+        body: JSON.stringify({ username, matricula, password, role, email, notificationPreference, allowedTicketTypes }),
       });
       const data = await response.json();
 
@@ -126,7 +119,6 @@ export function UsersTab() {
         setUsername("");
         setMatricula("");
         setPassword("");
-        setWhatsapp("");
         setEmail("");
         setNotificationPreference("none");
         setAllowedTicketTypes(AVAILABLE_TYPES);
@@ -339,30 +331,13 @@ export function UsersTab() {
                   disabled={submitLoading}
                 >
                   <option value="none">{t("users.notif.none")}</option>
-                  <option value="whatsapp">{t("users.notif.whatsapp")}</option>
                   <option value="email">{t("users.notif.email")}</option>
-                  <option value="both">{t("users.notif.both")}</option>
                 </select>
               </div>
 
-              {(notificationPreference === "whatsapp" || notificationPreference === "both") && (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-                    {t("users.whatsapp")}
-                  </label>
-                  <Input
-                    type="text"
-                    required
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="+5511999999999"
-                    className="h-11 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-100 focus:bg-white transition-colors"
-                    disabled={submitLoading}
-                  />
-                </div>
-              )}
 
-              {(notificationPreference === "email" || notificationPreference === "both") && (
+
+              {notificationPreference === "email" && (
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                     {t("users.email")}
@@ -747,23 +722,11 @@ export function UsersTab() {
                       className="w-full h-11 px-3 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-100 text-sm focus:border-red-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors outline-none"
                     >
                       <option value="none">{t("users.notif.none")}</option>
-                      <option value="whatsapp">{t("users.notif.whatsapp")}</option>
                       <option value="email">{t("users.notif.email")}</option>
-                      <option value="both">{t("users.notif.both")}</option>
                     </select>
                   </div>
-                  {(editUser.notificationPreference === "whatsapp" || editUser.notificationPreference === "both") && (
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">{t("users.whatsapp")}</label>
-                      <Input
-                        type="text"
-                        value={editUser.whatsapp || ""}
-                        onChange={(e) => setEditUser({ ...editUser, whatsapp: e.target.value })}
-                        className="h-11 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-100 rounded-none focus:border-red-500 focus:bg-white dark:focus:bg-zinc-900 transition-colors"
-                      />
-                    </div>
-                  )}
-                  {(editUser.notificationPreference === "email" || editUser.notificationPreference === "both") && (
+
+                  {editUser.notificationPreference === "email" && (
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">{t("users.email")}</label>
                       <Input

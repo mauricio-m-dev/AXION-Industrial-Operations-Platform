@@ -1,6 +1,7 @@
 import redisClient from "../config/redis";
 import { setMaintenanceMode } from "../utils/apmTracker";
-import { sendWhatsAppMessage, sendEmailMessage } from "../utils/notifications";
+import { sendEmailMessage } from "../utils/notifications";
+import { sendWeComMessage } from "../utils/webhook";
 import { ApmMetric, ApmReport, Ticket, AuditLog, User, LoginHistory, OperatorFeedback } from "../models/mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { analyzeSystemHealth } from "../utils/intelligence";
@@ -33,10 +34,10 @@ export class ApmService {
   public async testNotifications(type: string, target: string) {
     if (!target) throw Object.assign(new Error("Destinatário não informado."), { status: 400 });
     
-    if (type === "whatsapp") {
-      log(`Disparando WhatsApp de teste via APM para ${target}`, "INFO");
-      await sendWhatsAppMessage(target, "✅ *AXION*: Este é um teste de notificação do sistema via WhatsApp acionado pelo painel APM.");
-      return "Mensagem de teste do WhatsApp enviada com sucesso!";
+    if (type === "wecom") {
+      log(`Disparando WeCom de teste via APM para ${target}`, "INFO");
+      await sendWeComMessage(target, "✅ **AXION**: Este é um teste de notificação do sistema via WeCom acionado pelo painel APM.\n\n🔗 [Acessar Sistema AXION](https://app.axiontechnology.cloud)");
+      return "Mensagem de teste do WeCom enviada com sucesso!";
     } else if (type === "email") {
       log(`Disparando E-mail de teste via APM para ${target}`, "INFO");
       await sendEmailMessage(target, "✅ AXION: Teste de Notificação SMTP", "<p>Este é um teste de notificação do sistema enviado pelo painel APM.</p>");
@@ -143,10 +144,7 @@ export class ApmService {
     logAudit("DATABASE_WIPE_COMPLETED", user.username, { ip, status: "COMPLETED", timestamp_end: new Date().toISOString() });
 
     try {
-      if (admin.whatsapp && admin.notificationPreference !== 'none') {
-        await sendWhatsAppMessage(admin.whatsapp, `⚠️ ALERTA CRÍTICO AXION: Database Wipe executado por ${user.username} em ${new Date().toLocaleString('pt-BR')}. IP: ${ip}`);
-      }
-      if (admin.email && ['email', 'both'].includes(admin.notificationPreference || '')) {
+      if (admin.email && admin.notificationPreference === 'email') {
         await sendEmailMessage(admin.email, '⚠️ ALERTA CRÍTICO: Database Wipe Executado', `O banco de dados foi completamente limpo por ${user.username} em ${new Date().toLocaleString('pt-BR')}.<br/>IP: ${ip}`);
       }
     } catch (notifErr) {

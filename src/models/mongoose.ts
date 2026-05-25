@@ -15,10 +15,9 @@ export const UserSchema = new Schema({
   mfaSecret: { type: String, get: decrypt, set: encrypt },
   mfaEnabled: { type: Boolean, default: false },
   email: { type: String, get: decrypt, set: encrypt },
-  whatsapp: { type: String, get: decrypt, set: encrypt },
   notificationPreference: { 
     type: String, 
-    enum: ['whatsapp', 'email', 'both', 'none'], 
+    enum: ['email', 'none'], 
     default: 'none' 
   },
   allowedTicketTypes: { type: [String], default: [] },
@@ -121,6 +120,14 @@ export const ApmReportSchema = new Schema({
   created_at: { type: Date, default: Date.now }
 });
 
+export const WeComWebhookSchema = new Schema({
+  id: { type: String, required: true, unique: true },
+  name: { type: String },
+  url: { type: String, required: true },
+  ticketTypes: { type: [String], default: [] },
+  created_at: { type: Date, default: Date.now }
+});
+
 UserSchema.index({ username: 1 });
 
 export const User = mongoose.model("User", UserSchema);
@@ -133,3 +140,4 @@ export const OperatorFeedback = mongoose.model("OperatorFeedback", OperatorFeedb
 export const ApmMetric = mongoose.model("ApmMetric", ApmMetricSchema);
 ApmReportSchema.index({ created_at: -1 });
 export const ApmReport = mongoose.model("ApmReport", ApmReportSchema);
+export const WeComWebhook = mongoose.model("WeComWebhook", WeComWebhookSchema);

@@ -27,7 +27,7 @@ O sistema depende dos seguintes serviços externos para persistência e cache:
 1.  **MongoDB (v8.0):** Banco de dados NoSQL principal.
 2.  **Redis (v7):** Utilizado para cache de sessões, rate-limiting e barramento de eventos do Socket.io.
 3.  **Servidor SMTP:** Para envio de notificações por e-mail (ex: Gmail, SendGrid).
-4.  **API WhatsApp (Infobip):** Para envio de alertas críticos via WhatsApp.
+4.  **WeCom Group Robot:** Para envio de alertas críticos via WeCom Webhooks.
 
 ---
 
@@ -56,10 +56,8 @@ SMTP_SECURE=false
 SMTP_USER=usuario@exemplo.com
 SMTP_PASS=sua-senha-app
 
-# Notificações - WhatsApp (Infobip)
-WHATSAPP_API_URL=seu-subdominio.api.infobip.com/whatsapp/1/message/text
-WHATSAPP_API_KEY=sua-api-key
-WHATSAPP_SENDER_NUMBER=numero-remetente-configurado
+# Notificações - WeCom Group Robot
+WECOM_WEBHOOKS_MAP='{"default": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=sua-chave"}'
 ```
 
 ---

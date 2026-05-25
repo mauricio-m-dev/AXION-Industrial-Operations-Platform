@@ -10,9 +10,8 @@ export const userSchema = z.object({
   matricula: z.string().length(7, "A matrícula deve ter exatamente 7 dígitos").regex(/^\d+$/, "A matrícula deve conter apenas números"),
   password: z.string().min(6).max(64),
   role: z.string().optional(),
-  whatsapp: z.string().optional(),
-  email: z.string().email("E-mail inválido").optional().or(z.literal('')),
-  notificationPreference: z.enum(['whatsapp', 'email', 'both', 'none']).default('none'),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
+  notificationPreference: z.enum(['email', 'none']).default('none'),
   allowedTicketTypes: z.array(z.string()).optional(),
 });
 

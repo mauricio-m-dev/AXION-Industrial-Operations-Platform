@@ -224,20 +224,9 @@ export const securityHeaders = helmet();
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const checkIpBlacklist = async (req: Request, res: Response, next: NextFunction) => {
-  if (!redisClient || !redisClient.isOpen || !req.ip) return next();
-  try {
-    if (isLocalHostOrPrivateIP(req.ip)) {
-      return next();
-    }
-    const isBlacklisted = await redisClient.sIsMember("ip_blacklist", req.ip);
-    if (isBlacklisted) {
-      log(`Conexão recusada do IP na blacklist: ${req.ip}`, "WARN");
-      return res.status(403).json({ error: "Acesso bloqueado por violações repetidas de segurança." });
-    }
-    next();
-  } catch (err) {
-    next();
-  }
+  // Desativado para evitar bloqueio em massa de redes móveis (CGNAT/Compartilhadas).
+  // A segurança permanece ativa via bloqueio individual de conta (lockout) e rate limiting.
+  next();
 };
 
 export const incrementIpFailure = async (ip?: string) => {

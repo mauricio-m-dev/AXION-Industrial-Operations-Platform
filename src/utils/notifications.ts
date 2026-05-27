@@ -76,8 +76,14 @@ export async function sendEmailMessage(email: string, subject: string, htmlMessa
 export async function notifyUsersAboutTicket(ticketData: TicketNotificationData, priority: string) {
   try {
     // Disparar alertas para chamados de prioridade Alta, Crítica, OU do tipo Colisão (sempre crítico)
-    const isColisao = ticketData.type === "Colisão";
-    if (!isColisao && priority !== "Crítico" && priority !== "Alto") {
+    const normalizedType = ticketData.type?.toLowerCase() || "";
+    const normalizedPriority = priority?.toLowerCase() || "";
+    
+    const isColisao = normalizedType === "colisão" || normalizedType === "colisao";
+    const isAltoOrCritico = normalizedPriority === "crítico" || normalizedPriority === "critico" || normalizedPriority === "alto" || normalizedPriority === "alta";
+
+    if (!isColisao && !isAltoOrCritico) {
+      log(`[WeCom] Ignorando notificação WeCom/Email para chamado ${ticketData.id} (Tipo: ${ticketData.type}, Prioridade: ${priority}) - Regra de Negócio: Somente Alto/Crítico/Colisão.`, "INFO");
       return;
     }
 
@@ -104,7 +110,11 @@ ${isColisao ? "⚠️ Um chamado de **COLISÃO** foi registrado e classificado a
 
 Por favor, acesse a plataforma AXION imediatamente para realizar a tratativa do chamado.
 
-🔗 [Acessar Sistema AXION](https://app.axiontechnology.cloud)`;
+**Acesso pelo Computador**
+🔗 [https://app.axiontechnology.cloud/admin/login](https://app.axiontechnology.cloud/admin/login)
+
+**Acesso pelo Celular (Dados Móveis)**
+🔗 [https://axion.expandms-marketing.workers.dev/admin/login](https://axion.expandms-marketing.workers.dev/admin/login)`;
 
     const emailHtmlTemplate = buildUnifiedEmailHtml({
       title: "AXION - CENTRAL DE OPERAÇÕES",
@@ -150,6 +160,17 @@ export async function notifyUsersAboutTicketFinished(ticketData: TicketFinishedD
       isFinishedAlert: true,
       assignedTo: ticketData.assigned_to
     });
+
+    const normalizedType = ticketData.type?.toLowerCase() || "";
+    const normalizedPriority = ticketData.priority?.toLowerCase() || "";
+    
+    const isColisao = normalizedType === "colisão" || normalizedType === "colisao";
+    const isAltoOrCritico = normalizedPriority === "crítico" || normalizedPriority === "critico" || normalizedPriority === "alto" || normalizedPriority === "alta";
+
+    if (!isColisao && !isAltoOrCritico) {
+      log(`[WeCom] Ignorando alerta de finalização WeCom/Email para chamado ${ticketData.id} (Tipo: ${ticketData.type}, Prioridade: ${ticketData.priority}) - Regra de Negócio: Somente Alto/Crítico/Colisão.`, "INFO");
+      return;
+    }
 
     const date = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const createdAt = ticketData.created_at ? new Date(ticketData.created_at) : null;
@@ -203,7 +224,11 @@ O chamado abaixo foi finalizado com sucesso.
 **Relatório de Finalização:**
 ${reportTruncated}
 
-🔗 [Acessar Sistema AXION](https://app.axiontechnology.cloud)`;
+**Acesso pelo Computador**
+🔗 [https://app.axiontechnology.cloud/admin/login](https://app.axiontechnology.cloud/admin/login)
+
+**Acesso pelo Celular (Dados Móveis)**
+🔗 [https://axion.expandms-marketing.workers.dev/admin/login](https://axion.expandms-marketing.workers.dev/admin/login)`;
 
     const emailHtmlTemplate = buildUnifiedEmailHtml({
       title: "AXION - CENTRAL DE OPERAÇÕES",

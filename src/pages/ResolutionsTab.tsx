@@ -29,21 +29,29 @@ interface Props {
   tickets: Ticket[];
   getStatusBadge: (status: string) => React.ReactNode;
   nav?: React.ReactNode;
+  usersList?: any[];
 }
 
-export function ResolutionsTab({ tickets, getStatusBadge, nav }: Props) {
+export function ResolutionsTab({ tickets, getStatusBadge, nav, usersList }: Props) {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const getAssigneeName = (assigneeId: string | null | undefined) => {
+    if (!assigneeId) return t("res.unassigned");
+    if (!usersList) return assigneeId;
+    const user = usersList.find(u => String(u.matricula) === String(assigneeId) || String(u.username) === String(assigneeId));
+    return user ? user.username : assigneeId;
+  };
+
   const filteredTickets = useMemo(() => {
     return tickets.filter(ticket =>
       (ticket.status === "Em atendimento" || ticket.status === "Finalizado") &&
       (
         String(ticket.id || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(ticket.assigned_to || "").toLowerCase().includes(searchTerm.toLowerCase())
+        String(getAssigneeName(ticket.assigned_to)).toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
   }, [tickets, searchTerm]);
@@ -78,7 +86,7 @@ export function ResolutionsTab({ tickets, getStatusBadge, nav }: Props) {
 
     tickets.forEach(ticket => {
       if (!ticket.assigned_to || ticket.status !== "Finalizado" || !ticket.finished_at) return;
-      const tech = ticket.assigned_to;
+      const tech = getAssigneeName(ticket.assigned_to);
       if (!techStats[tech]) {
         techStats[tech] = { name: tech, total: 0, totalMTTR: 0, slaCompliant: 0 };
       }
@@ -184,6 +192,7 @@ export function ResolutionsTab({ tickets, getStatusBadge, nav }: Props) {
                 <TableHead className="text-[11px] font-black uppercase tracking-wider h-12 text-zinc-400">{t("res.resp")}</TableHead>
                 <TableHead className="text-[11px] font-black uppercase tracking-wider h-12 text-zinc-400">{t("res.start")}</TableHead>
                 <TableHead className="text-[11px] font-black uppercase tracking-wider h-12 text-zinc-400">{t("res.end")}</TableHead>
+                <TableHead className="text-[11px] font-black uppercase tracking-wider h-12 text-zinc-400">{t("res.report")}</TableHead>
                 <TableHead className="text-[11px] font-black uppercase tracking-wider h-12 text-zinc-400">MTTR</TableHead>
                 <TableHead className="text-[11px] font-black uppercase tracking-wider h-12 text-right pr-6 text-zinc-400">{t("audit.action")}</TableHead>
               </TableRow>
@@ -196,7 +205,7 @@ export function ResolutionsTab({ tickets, getStatusBadge, nav }: Props) {
                 if (filteredTickets.length === 0) {
                   return (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-40 text-center">
+                      <TableCell colSpan={7} className="h-40 text-center">
                         <div className="flex flex-col items-center justify-center gap-3 text-zinc-400">
                           <PenTool size={32} strokeWidth={1.5} className="opacity-50" />
                           <p className="font-bold uppercase tracking-widest text-xs opacity-60">{t("res.empty")}</p>
@@ -217,13 +226,16 @@ export function ResolutionsTab({ tickets, getStatusBadge, nav }: Props) {
                             <div className="mt-1">{getStatusBadge(ticket.status)}</div>
                           </TableCell>
                           <TableCell className="py-4">
-                            <span className="font-bold text-zinc-700 dark:text-zinc-300">{ticket.assigned_to || t("res.unassigned")}</span>
+                            <span className="font-bold text-zinc-700 dark:text-zinc-300">{getAssigneeName(ticket.assigned_to)}</span>
                           </TableCell>
                           <TableCell className="py-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">
                             {formatDate(ticket.started_at)}
                           </TableCell>
                           <TableCell className="py-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">
                             {formatDate(ticket.finished_at)}
+                          </TableCell>
+                          <TableCell className="py-4 text-sm text-zinc-600 dark:text-zinc-400 max-w-xs truncate" title={ticket.resolution_report || ""}>
+                            {ticket.resolution_report ? `"${ticket.resolution_report}"` : "-"}
                           </TableCell>
                           <TableCell className="py-4">
                             <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm ${mttrInfo.bg} ${mttrInfo.color} font-bold text-xs`}>
@@ -331,7 +343,7 @@ export function ResolutionsTab({ tickets, getStatusBadge, nav }: Props) {
                     <p className="text-[10px] font-black uppercase text-red-400 tracking-widest flex items-center gap-2">
                       <PenTool size={12} /> {t("res.resp")}
                     </p>
-                    <p className="font-bold text-zinc-900 dark:text-zinc-100">{selectedTicket.assigned_to || "-"}</p>
+                    <p className="font-bold text-zinc-900 dark:text-zinc-100">{getAssigneeName(selectedTicket.assigned_to)}</p>
                   </div>
                   
                   <div className="p-5 rounded-none bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800/80 space-y-2">

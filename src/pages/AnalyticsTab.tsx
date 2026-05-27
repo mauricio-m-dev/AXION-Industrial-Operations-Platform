@@ -33,9 +33,10 @@ interface Ticket {
 interface Props {
   tickets: Ticket[];
   getStatusBadge: (status: string) => React.ReactNode;
+  usersList?: any[];
 }
 
-export function AnalyticsTab({ tickets, getStatusBadge }: Readonly<Props>) {
+export function AnalyticsTab({ tickets, getStatusBadge, usersList }: Readonly<Props>) {
   const [activeSubTab, setActiveSubTab] = useState("overview");
   const { t } = useLanguage();
 
@@ -98,7 +99,7 @@ export function AnalyticsTab({ tickets, getStatusBadge }: Readonly<Props>) {
       <div className="mt-2">
         <Suspense fallback={<TabFallback />}>
           {activeSubTab === "overview" && <WeeklyReportTab tickets={tickets} getStatusBadge={getStatusBadge} nav={subTabNav} />}
-          {activeSubTab === "mttr" && <ResolutionsTab tickets={tickets} getStatusBadge={getStatusBadge} nav={subTabNav} />}
+          {activeSubTab === "mttr" && <ResolutionsTab tickets={tickets} getStatusBadge={getStatusBadge} nav={subTabNav} usersList={usersList} />}
           {activeSubTab === "mtbf" && <MtbfTab tickets={tickets} nav={subTabNav} />}
         </Suspense>
       </div>

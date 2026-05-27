@@ -78,8 +78,8 @@ export const ActionModals = ({
                       .map((u: any) => (
                         <div
                           key={u.id}
-                          onClick={() => setAssignedToUser(u.matricula)}
-                          className={`p-3 cursor-pointer text-sm transition-colors border-b border-zinc-50 dark:border-zinc-900 last:border-0 ${assignedToUser === u.matricula ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold" : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"}`}
+                          onClick={() => setAssignedToUser(u.username)}
+                          className={`p-3 cursor-pointer text-sm transition-colors border-b border-zinc-50 dark:border-zinc-900 last:border-0 ${assignedToUser === u.username ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold" : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"}`}
                         >
                           <div className="flex items-center justify-between">
                             <span>{u.username}</span>

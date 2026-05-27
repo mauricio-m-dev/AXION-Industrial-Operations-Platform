@@ -47,7 +47,7 @@ router.get("/login-history", requireAuth, requireAdmin, async (req: Authenticate
   }
 });
 
-router.post("/click", publicLimiter, async (req: AuthenticatedRequest, res: Response) => {
+router.post(["/click", "/audit/click"], publicLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { target, url, action, username } = req.body;
     

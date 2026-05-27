@@ -243,7 +243,7 @@ export default function AdminPage() {
               </Card>
             </div>
           ) : activeTab === "performance" ? (
-            <AnalyticsTab tickets={tickets} getStatusBadge={() => <></>} /> 
+            <AnalyticsTab tickets={tickets} getStatusBadge={() => <></>} usersList={usersList} /> 
           ) : activeTab === "health" ? (
             <ApmContainer />
           ) : activeTab === "settings" ? (

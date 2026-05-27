@@ -153,13 +153,13 @@ export class TicketService {
     const skip = (page - 1) * limit;
     const [total, tickets] = await Promise.all([
       Ticket.countDocuments(filter),
-      Ticket.find(filter).select('-resolution_report -images -__v').sort({ created_at: -1 }).skip(skip).limit(limit).lean()
+      Ticket.find(filter).select('-images -__v').sort({ created_at: -1 }).skip(skip).limit(limit).lean()
     ]);
     return { data: tickets, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   public async getTickets(filter: any) {
-    return Ticket.find(filter).select('-resolution_report -images -__v').sort({ created_at: -1 }).lean();
+    return Ticket.find(filter).select('-images -__v').sort({ created_at: -1 }).lean();
   }
 
   public async updateStatus(id: string, status: string, user: any) {

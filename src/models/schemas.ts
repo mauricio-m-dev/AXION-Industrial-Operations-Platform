@@ -18,7 +18,7 @@ export const userSchema = z.object({
 export const ticketSchema = z.object({
   type: z.string().min(1),
   location: z.string().min(1),
-  agv_number: z.string().regex(/^\d{1,10}$/, "Apenas valores inteiros positivos (máx 10 dígitos)").optional(),
+  agv_number: z.string().regex(/^\d{1,10}$/, "Apenas valores inteiros positivos (máx 10 dígitos)").optional().or(z.literal('')),
   part_name: z.string().optional(),
   sap_number: z.string().optional(),
   side: z.string().optional(),

@@ -38,7 +38,7 @@ export function ClickTracker() {
       }
 
       // Send the tracking event without blocking the main thread
-      fetch("/api/audit/click", {
+      fetch("/api/click", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

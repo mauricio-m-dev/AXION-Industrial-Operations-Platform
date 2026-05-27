@@ -70,7 +70,7 @@ services:
     container_name: axion_nginx
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "80:80"
       - "8443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
@@ -83,3 +83,9 @@ volumes:
   axion_mongo_data:
   axion_redis_data:
   axion_uploads_data:
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1350"
